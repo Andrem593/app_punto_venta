@@ -2,7 +2,7 @@
   <q-page class="q-pa-md">
     <div class="row">
       <div class="col-sm-12 col-xs-12 col-md-9">
-        <q-input filled v-model="text" />
+        <q-input filled v-model="text" class="text-h6" />
         <q-separator spaced />
         <q-btn-toggle
           v-model="secondModel"
@@ -87,12 +87,66 @@
 
         <q-separator spaced />
       </div>
-      <div class="col-md-3">
+      <div class="col-sm-12 col-xs-12 col-md-3">
         <div class="q-pa-md">
           <div class="justify-center">
             <q-card class="my-card" flat bordered>
-              <q-img src="https://cdn.quasar.dev/img/parallax2.jpg" />
+              <q-card-section class="text-center">
+                <div class="text-h6">Marco Antonio cardenas Perez</div>
+                <div class="text-subtitle2">0944296730</div>
+              </q-card-section>
+              <q-separator />
+              <q-card-section>
+                <div class="text-subtitle2">Productos:</div>
+              </q-card-section>
+              <q-separator />
 
+              <div style="max-height: 30vh" class="scroll">
+                <q-card-actions class="q-pa-sm">
+                  <div
+                    class="row items-center"
+                    style="width: 100%"
+                    v-for="i in 15"
+                    :key="i"
+                  >
+                    <q-item-label class="col text-start"
+                      >Calzado: {{ i }}</q-item-label
+                    >
+                    <div class="col-auto row justify-end">
+                      <q-item-label class="col text-start"
+                        >${{ i }}.00</q-item-label
+                      >
+                    </div>
+                  </div>
+
+                  <!-- <q-intersection
+                    v-for="index in 60"
+                    :key="index"
+                    transition="flip-right"
+                    class="example-item"
+                  >
+                    <q-item clickable v-ripple>
+                      <q-item-section avatar>
+                        <q-avatar color="primary" text-color="white">
+                          Q
+                        </q-avatar>
+                      </q-item-section>
+
+                      <q-item-section>
+                        <q-item-label>Contact #{{ index }}</q-item-label>
+                        <q-item-label caption lines="1"
+                          >some@email.com</q-item-label
+                        >
+                      </q-item-section>
+
+                      <q-item-section side>
+                        <q-icon name="chat_bubble" color="green" />
+                      </q-item-section>
+                    </q-item>
+                  </q-intersection> -->
+                </q-card-actions>
+              </div>
+              <q-separator />
               <q-card-actions class="q-pa-sm">
                 <div class="row items-center" style="width: 100%">
                   <q-item-label class="col text-start">Descuento:</q-item-label>
@@ -129,17 +183,20 @@
                   </div>
                 </div>
               </q-card-actions>
-
-              <q-slide-transition>
-                <div v-show="expanded">
-                  <q-separator />
-                  <q-card-section class="text-subtitle2">
-                    {{ lorem }}
-                  </q-card-section>
-                </div>
-              </q-slide-transition>
             </q-card>
           </div>
+        </div>
+
+        <div class="flex justify-center q-pa-sm">
+          <q-chip
+            class="col"
+            v-model="vanilla"
+            color="primary"
+            text-color="white"
+            icon="cake"
+            label="vanillaLabel"
+            title="vanillaLabel"
+          />
         </div>
       </div>
     </div>
