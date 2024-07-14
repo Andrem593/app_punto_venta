@@ -2,7 +2,11 @@
   <q-page class="q-pa-md">
     <div class="row">
       <div class="col-sm-12 col-xs-12 col-md-9">
-        <q-input filled v-model="text" class="text-h6" />
+        <q-input v-model="text" class="text-h6">
+          <template v-slot:prepend>
+            <q-icon name="search" />
+          </template>
+        </q-input>
         <q-separator spaced />
         <q-btn-toggle
           v-model="secondModel"
@@ -15,8 +19,8 @@
           size="25px"
           text-color="primary"
           :options="[
-            { label: 'Option 1', value: 'one' },
-            { label: 'Option 2', value: 'two' },
+            { label: 'CATEGORIAS', value: 'one' },
+            { label: 'PRODUCTOS', value: 'two' },
           ]"
         />
         <q-separator spaced />
@@ -43,9 +47,8 @@
 
               <q-separator />
 
-              <q-card-actions>
-                <q-btn flat round icon="event" />
-                <q-btn flat color="primary">Reserve</q-btn>
+              <q-card-actions align="center">
+                <q-btn flat color="primary">Agregar</q-btn>
               </q-card-actions>
             </q-card>
 
@@ -91,6 +94,15 @@
         <div class="q-pa-md">
           <div class="justify-center">
             <q-card class="my-card" flat bordered>
+              <q-card-section class="text-right">
+                <q-btn
+                  @click="toolbar = true"
+                  color="secondary"
+                  icon="person"
+                  icon-right="search"
+                  label="Cliente"
+                />
+              </q-card-section>
               <q-card-section class="text-center">
                 <div class="text-h6">Marco Antonio cardenas Perez</div>
                 <div class="text-subtitle2">0944296730</div>
@@ -187,19 +199,66 @@
           </div>
         </div>
 
-        <div class="flex justify-center q-pa-sm">
-          <q-chip
-            class="col"
-            v-model="vanilla"
-            color="primary"
-            text-color="white"
-            icon="cake"
-            label="vanillaLabel"
-            title="vanillaLabel"
-          />
+        <div class="q-mt-md q-mx-md q-pa-md" style="background: #1976d2">
+          <div class="row items-center" style="width: 100%">
+            <q-item-label class="col text-start" style="color: white"
+              >TOTAL</q-item-label
+            >
+            <div class="col-auto row justify-end">
+              <q-item-label class="col text-start" style="color: white"
+                >$10.00</q-item-label
+              >
+            </div>
+          </div>
         </div>
       </div>
     </div>
+
+    <q-dialog v-model="toolbar">
+      <q-card style="width: 700px; max-width: 80vw">
+        <q-toolbar>
+          <q-avatar>
+            <img
+              src="https://contifico.com/wp-content/uploads/2020/06/isotipo-contifico-1.png"
+            />
+          </q-avatar>
+
+          <q-toolbar-title class="text-center"
+            >Listado de Personas</q-toolbar-title
+          >
+
+          <q-btn flat round dense icon="close" v-close-popup />
+        </q-toolbar>
+
+        <q-card-section>
+          <q-input v-model="name" label="Cliente" lazy-rules
+            ><template v-slot:prepend>
+              <q-icon name="search" />
+            </template>
+            <template v-slot:after>
+              <q-btn round dense flat icon="add" />
+            </template>
+          </q-input>
+        </q-card-section>
+
+        <q-card-section style="max-height: 50vh" class="scroll">
+          <q-list bordered class="rounded-borders">
+            <q-item clickable v-ripple v-for="i in 25" :key="i">
+              <q-item-section>
+                <q-item-label lines="1"
+                  >Marco Antonio Cardenas Perez</q-item-label
+                >
+                <q-item-label caption lines="2">
+                  <span class="text-weight-bold">0944296731</span>
+                </q-item-label>
+              </q-item-section>
+
+              <q-item-section side top>marco@gmail.com</q-item-section>
+            </q-item>
+          </q-list>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
@@ -211,6 +270,7 @@ export default {
     return {
       model: ref("one"),
       secondModel: ref("one"),
+      toolbar: ref(false),
     };
   },
 };
