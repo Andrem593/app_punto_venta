@@ -130,32 +130,6 @@
                       >
                     </div>
                   </div>
-
-                  <!-- <q-intersection
-                    v-for="index in 60"
-                    :key="index"
-                    transition="flip-right"
-                    class="example-item"
-                  >
-                    <q-item clickable v-ripple>
-                      <q-item-section avatar>
-                        <q-avatar color="primary" text-color="white">
-                          Q
-                        </q-avatar>
-                      </q-item-section>
-
-                      <q-item-section>
-                        <q-item-label>Contact #{{ index }}</q-item-label>
-                        <q-item-label caption lines="1"
-                          >some@email.com</q-item-label
-                        >
-                      </q-item-section>
-
-                      <q-item-section side>
-                        <q-icon name="chat_bubble" color="green" />
-                      </q-item-section>
-                    </q-item>
-                  </q-intersection> -->
                 </q-card-actions>
               </div>
               <q-separator />
@@ -236,7 +210,7 @@
               <q-icon name="search" />
             </template>
             <template v-slot:after>
-              <q-btn round dense flat icon="add" />
+              <q-btn round dense flat icon="add" @click="alert = true" />
             </template>
           </q-input>
         </q-card-section>
@@ -259,6 +233,93 @@
         </q-card-section>
       </q-card>
     </q-dialog>
+
+    <q-dialog v-model="alert" persistent>
+      <q-card>
+        <q-toolbar>
+          <q-toolbar-title class="text-center"
+            >Registrar Clientes</q-toolbar-title
+          >
+
+          <q-btn flat round dense icon="close" v-close-popup />
+        </q-toolbar>
+
+        <q-card-section class="q-pt-none">
+          <q-input
+            v-model="name"
+            label="Ruc *"
+            hint="Ruc"
+            lazy-rules
+            :rules="[(val) => (val && val.length > 0) || 'Escribe algo']"
+          >
+          </q-input>
+          <q-input
+            v-model="name"
+            label="Cédula *"
+            hint="Cédula"
+            lazy-rules
+            :rules="[(val) => (val && val.length > 0) || 'Escribe algo']"
+          >
+          </q-input>
+          <q-input
+            v-model="name"
+            label="Nombre *"
+            hint="Nombre"
+            lazy-rules
+            :rules="[(val) => (val && val.length > 0) || 'Escribe algo']"
+          >
+          </q-input>
+          <q-input
+            v-model="name"
+            label="Teléfono *"
+            hint="Teléfono"
+            lazy-rules
+            :rules="[(val) => (val && val.length > 0) || 'Escribe algo']"
+          >
+          </q-input>
+          <q-input
+            v-model="name"
+            label="Email *"
+            hint="Email"
+            lazy-rules
+            :rules="[(val) => (val && val.length > 0) || 'Escribe algo']"
+          >
+          </q-input>
+          <q-input
+            v-model="name"
+            label="Dirección *"
+            hint="Dirección"
+            lazy-rules
+            :rules="[(val) => (val && val.length > 0) || 'Escribe algo']"
+          >
+          </q-input>
+        </q-card-section>
+        <q-card-actions align="around">
+          <q-btn
+            align="center"
+            class="btn-fixed-width"
+            color="secondary"
+            v-close-popup
+            label="Guardar"
+            style="width: 150px"
+          />
+          <q-btn
+            align="center"
+            class="btn-fixed-width"
+            color="primary"
+            label="Limpiar"
+            style="width: 150px"
+          />
+          <q-btn
+            align="center"
+            class="btn-fixed-width"
+            color="negative"
+            label="Cancelar"
+            style="width: 150px"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
@@ -271,6 +332,7 @@ export default {
       model: ref("one"),
       secondModel: ref("one"),
       toolbar: ref(false),
+      alert: ref(false),
     };
   },
 };
