@@ -16,6 +16,17 @@ function initializeDatabase() {
     },
     useNullAsDefault: true,
   });
+  // Crear tabla de usuarios si no existe
+  db.schema.hasTable("users").then((exists) => {
+    if (!exists) {
+      return db.schema.createTable("users", (table) => {
+        table.increments("id").primary();
+        table.string("name");
+        table.string("email");
+        table.string("password");
+      });
+    }
+  });
 }
 
 // Registrar manejadores IPC
