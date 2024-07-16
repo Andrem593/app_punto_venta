@@ -4,3 +4,4 @@ App punto de venta para Economato
 Vue 3
 Node v18
 Quasar
+sqLite3
