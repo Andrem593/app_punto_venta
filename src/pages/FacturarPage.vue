@@ -28,32 +28,31 @@
         <div style="max-height: 60vh" class="scroll">
           <div class="q-pa-md row justify-center q-gutter-md">
             <q-card
+              style="width: 100px;"
               class="my-card"
               flat
               bordered
               v-for="(data, index) in products"
               :key="index"
             >
-              <q-img :src="data.img" class="my-img"  style="width: 90px; height: 100px"/>
+              <q-img :src="data.img" class="my-img"  style="width: 100px; height: 100px"/>
 
               <q-card-section>
                 <div class="row no-wrap items-center">
                   <div class="col ellipsis">{{ data.nombre }}</div>
                 </div>
+                <div class="row justify-center">
+                  <q-btn
+                    :disable="form.cliente_id == ''"
+                    flat
+                    style="font-size: 10px"
+                    color="primary"
+                    @click="getProductInformation(data)"
+                  >
+                    Agregar
+                  </q-btn>
+                </div>
               </q-card-section>
-
-              <q-separator />
-
-              <q-card-actions align="center">
-                <q-btn
-                  :disable="form.cliente_id == ''"
-                  flat
-                  style="font-size: 10px"
-                  color="primary"
-                  @click="getProductInformation(data)"
-                  >Agregar</q-btn
-                >
-              </q-card-actions>
             </q-card>
           </div>
         </div>
@@ -122,53 +121,55 @@
                 </q-card-actions>
               </div> -->
               <q-card-section>
-                <q-table
-                  :rows="form.productos"
-                  :columns="columns1"
-                  row-key="id"
-                  :rows-per-page-options="[]"
-                  hide-bottom
-                >
-                  <template v-slot:body-cell-precio="props">
-                    <q-td :props="props">
-                      ${{ props.row.precio }}
-                      <!-- <q-input v-model="props.row.nombre" dense /> -->
-                    </q-td>
-                  </template>
-                  <template v-slot:body-cell-total="props">
-                    <q-td :props="props">
-                      ${{ props.row.total }}
-                      <!-- <q-input v-model="props.row.nombre" dense /> -->
-                    </q-td>
-                  </template>
+                <div style="max-height: 60vh; overflow-y: auto;" class="scroll">
+                  <q-table
+                    :rows="form.productos"
+                    :columns="columns1"
+                    row-key="id"
+                    :rows-per-page-options="[]"
+                    hide-bottom
+                  >
+                    <template v-slot:body-cell-precio="props">
+                      <q-td :props="props">
+                        ${{ props.row.precio }}
+                        <!-- <q-input v-model="props.row.nombre" dense /> -->
+                      </q-td>
+                    </template>
+                    <template v-slot:body-cell-total="props">
+                      <q-td :props="props">
+                        ${{ props.row.total }}
+                        <!-- <q-input v-model="props.row.nombre" dense /> -->
+                      </q-td>
+                    </template>
 
-                  <!-- <template v-slot:body-cell-cantidad="props">
-                    <q-td :props="props">
-                      <q-input
-                        v-model="props.row.cantidad"
-                        type="number"
-                        dense
-                      />
-                    </q-td>
-                  </template> -->
+                    <!-- <template v-slot:body-cell-cantidad="props">
+                      <q-td :props="props">
+                        <q-input
+                          v-model="props.row.cantidad"
+                          type="number"
+                          dense
+                        />
+                      </q-td>
+                    </template> -->
 
-                  <!-- <template v-slot:body-cell-precio="props">
-                    <q-td :props="props">
-                      <q-input v-model="props.row.precio" type="number" dense />
-                    </q-td>
-                  </template> -->
+                    <!-- <template v-slot:body-cell-precio="props">
+                      <q-td :props="props">
+                        <q-input v-model="props.row.precio" type="number" dense />
+                      </q-td>
+                    </template> -->
 
-                  <template v-slot:body-cell-acciones="props">
-                    <q-td :props="props">
-                      <q-btn
-                        color="negative"
-                        icon="delete"
-                        @click="deleteProduct(props.row, props.rowIndex)"
-                        dense
-                      />
-                    </q-td>
-                  </template>
-                </q-table>
+                    <template v-slot:body-cell-acciones="props">
+                      <q-td :props="props">
+                        <q-btn
+                          color="negative"
+                          icon="delete"
+                          @click="deleteProduct(props.row, props.rowIndex)"
+                          dense
+                        />
+                      </q-td>
+                    </template>
+                  </q-table>
+                </div>
               </q-card-section>
               <!-- <q-separator /> -->
               <!-- <q-card-actions class="q-pa-sm">
@@ -235,8 +236,8 @@
 
       <div class="col-md-12">
         <q-btn-group spread>
-          <q-btn color="purple" label="GUARDAR" icon="timeline" />
-          <q-btn color="red" label="PAGAR" icon="visibility" />
+          <q-btn style="background-color: #00CFFF; color: white;font-size: 20px;" label="GUARDAR"   icon="save" />
+          <q-btn color="green" label="PAGAR" style="font-size: 20px;"  icon="money" />
          
         </q-btn-group>
       </div>
