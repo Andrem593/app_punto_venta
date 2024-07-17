@@ -1,7 +1,7 @@
 <template>
   <q-page class="q-pa-md">
     <div class="row">
-      <div class="col-sm-12 col-xs-12 col-md-9">
+      <div class="col-sm-12 col-xs-12 col-md-8">
         <q-input v-model="text" class="text-h6">
           <template v-slot:prepend>
             <q-icon name="search" />
@@ -31,58 +31,27 @@
               class="my-card my-card-2"
               flat
               bordered
-              v-for="n in 10"
-              :key="n"
+              v-for="(data, index) in products"
+              :key="index"
             >
-              <q-img
-                src="https://cdn.quasar.dev/img/chicken-salad.jpg"
-                class="my-img"
-              />
+              <q-img :src="data.img" class="my-img" />
 
               <q-card-section>
                 <div class="row no-wrap items-center">
-                  <div class="col text-h6 ellipsis">Cafe Basilico</div>
+                  <div class="col text-h6 ellipsis">{{ data.nombre }}</div>
                 </div>
               </q-card-section>
 
               <q-separator />
 
               <q-card-actions align="center">
-                <q-btn flat color="primary">Agregar</q-btn>
-              </q-card-actions>
-            </q-card>
-
-            <q-card
-              class="my-card my-card-2"
-              flat
-              bordered
-              v-for="n in 5"
-              :key="n"
-            >
-              <q-img
-                class="my-img"
-                src="https://contifico.com/wp-content/uploads/2020/06/isotipo-contifico-1.png"
-              />
-
-              <q-card-section>
-                <div class="row no-wrap items-center">
-                  <div class="col custom-font">
-                    <strong
-                      ><p>
-                        Jabolsdsdsdsssdsssasas lava todo sahsagsagsah
-                        gagsahsgagh saasaaaaaaaaaaaaaaaaaaa gaghggsaashahaaggagh
-                        ahgsa
-                      </p></strong
-                    >
-                  </div>
-                </div>
-              </q-card-section>
-
-              <q-separator />
-
-              <q-card-actions>
-                <q-btn flat round icon="event" />
-                <q-btn flat color="primary">Reserve</q-btn>
+                <q-btn
+                  :disable="form.cliente_id == ''"
+                  flat
+                  color="primary"
+                  @click="getProductInformation(data)"
+                  >Agregar</q-btn
+                >
               </q-card-actions>
             </q-card>
           </div>
@@ -90,13 +59,13 @@
 
         <q-separator spaced />
       </div>
-      <div class="col-sm-12 col-xs-12 col-md-3">
+      <div class="col-sm-12 col-xs-12 col-md-4">
         <div class="q-pa-md">
           <div class="justify-center">
             <q-card class="my-card" flat bordered>
               <q-card-section class="text-right">
                 <q-btn
-                  @click="toolbar = true"
+                  @click="modalSearchClient = true"
                   color="secondary"
                   icon="person"
                   icon-right="search"
@@ -104,16 +73,32 @@
                 />
               </q-card-section>
               <q-card-section class="text-center">
-                <div class="text-h6">Marco Antonio cardenas Perez</div>
-                <div class="text-subtitle2">0944296730</div>
+                <div class="text-h6">{{ form.nombre_completo }}</div>
+                <div class="text-subtitle2">{{ form.cedula }}</div>
               </q-card-section>
               <q-separator />
               <q-card-section>
-                <div class="text-subtitle2">Productos:</div>
+                <div class="text-subtitle2">Saldo: ${{ form.saldo }}</div>
               </q-card-section>
-              <q-separator />
 
-              <div style="max-height: 30vh" class="scroll">
+              <!-- <q-separator /> -->
+              <!-- <q-card-section>
+                <q-table
+                  style="height: 400px"
+                  flat
+                  bordered
+                  virtual-scroll
+                  title="Treats"
+                  :rows="rows"
+                  :columns="columns"
+                  :rows-per-page-options="[0]"
+                  row-key="name"
+                />
+              </q-card-section> -->
+
+              <!-- <q-separator /> -->
+
+              <!-- <div style="max-height: 30vh" class="scroll">
                 <q-card-actions class="q-pa-sm">
                   <div
                     class="row items-center"
@@ -131,13 +116,64 @@
                     </div>
                   </div>
                 </q-card-actions>
-              </div>
+              </div> -->
+              <q-card-section>
+                <q-table
+                  :rows="form.productos"
+                  :columns="columns1"
+                  row-key="id"
+                  :rows-per-page-options="[]"
+                  hide-bottom
+                >
+                  <template v-slot:body-cell-precio="props">
+                    <q-td :props="props">
+                      ${{ props.row.precio }}
+                      <!-- <q-input v-model="props.row.nombre" dense /> -->
+                    </q-td>
+                  </template>
+                  <template v-slot:body-cell-total="props">
+                    <q-td :props="props">
+                      ${{ props.row.total }}
+                      <!-- <q-input v-model="props.row.nombre" dense /> -->
+                    </q-td>
+                  </template>
+
+                  <!-- <template v-slot:body-cell-cantidad="props">
+                    <q-td :props="props">
+                      <q-input
+                        v-model="props.row.cantidad"
+                        type="number"
+                        dense
+                      />
+                    </q-td>
+                  </template> -->
+
+                  <!-- <template v-slot:body-cell-precio="props">
+                    <q-td :props="props">
+                      <q-input v-model="props.row.precio" type="number" dense />
+                    </q-td>
+                  </template> -->
+
+                  <template v-slot:body-cell-acciones="props">
+                    <q-td :props="props">
+                      <q-btn
+                        color="negative"
+                        icon="delete"
+                        @click="eliminarProducto(props.row)"
+                        dense
+                      />
+                    </q-td>
+                  </template>
+                </q-table>
+              </q-card-section>
               <q-separator />
               <q-card-actions class="q-pa-sm">
                 <div class="row items-center" style="width: 100%">
                   <q-item-label class="col text-start">Descuento:</q-item-label>
                   <div class="col-auto row justify-end">
-                    <q-item-label class="col text-start">$0.00</q-item-label>
+                    <q-item-label class="col text-start"
+                      >${{ form.descuento }}</q-item-label
+                    >
                   </div>
                 </div>
               </q-card-actions>
@@ -149,7 +185,9 @@
                     >Subtotal I.V.A:</q-item-label
                   >
                   <div class="col-auto row justify-end">
-                    <q-item-label class="col text-start">$60.00</q-item-label>
+                    <q-item-label class="col text-start"
+                      >${{ form.subtotal_iva }}</q-item-label
+                    >
                   </div>
                 </div>
               </q-card-actions>
@@ -157,7 +195,9 @@
                 <div class="row items-center" style="width: 100%">
                   <q-item-label class="col text-start">Subtotal:</q-item-label>
                   <div class="col-auto row justify-end">
-                    <q-item-label class="col text-start">$60.00</q-item-label>
+                    <q-item-label class="col text-start"
+                      >${{ form.subtotal }}</q-item-label
+                    >
                   </div>
                 </div>
               </q-card-actions>
@@ -165,7 +205,9 @@
                 <div class="row items-center" style="width: 100%">
                   <q-item-label class="col text-start">IVA:</q-item-label>
                   <div class="col-auto row justify-end">
-                    <q-item-label class="col text-start">$10.00</q-item-label>
+                    <q-item-label class="col text-start"
+                      >${{ form.iva }}</q-item-label
+                    >
                   </div>
                 </div>
               </q-card-actions>
@@ -180,7 +222,7 @@
             >
             <div class="col-auto row justify-end">
               <q-item-label class="col text-start" style="color: white"
-                >$10.00</q-item-label
+                >${{ form.total }}</q-item-label
               >
             </div>
           </div>
@@ -188,7 +230,7 @@
       </div>
     </div>
 
-    <q-dialog v-model="toolbar">
+    <q-dialog v-model="modalSearchClient">
       <q-card style="width: 700px; max-width: 80vw">
         <q-toolbar>
           <q-avatar>
@@ -209,114 +251,65 @@
             ><template v-slot:prepend>
               <q-icon name="search" />
             </template>
-            <template v-slot:after>
-              <q-btn round dense flat icon="add" @click="alert = true" />
-            </template>
           </q-input>
         </q-card-section>
 
         <q-card-section style="max-height: 50vh" class="scroll">
           <q-list bordered class="rounded-borders">
-            <q-item clickable v-ripple v-for="i in 25" :key="i">
-              <q-item-section>
-                <q-item-label lines="1"
-                  >Marco Antonio Cardenas Perez</q-item-label
-                >
+            <q-item clickable v-ripple v-for="(data, i) in clientes" :key="i">
+              <q-item-section @click="getCustomerData(data)">
+                <q-item-label lines="1">{{
+                  data.nombre_completo
+                }}</q-item-label>
                 <q-item-label caption lines="2">
-                  <span class="text-weight-bold">0944296731</span>
+                  <span class="text-weight-bold">{{ data.cedula }}</span>
                 </q-item-label>
               </q-item-section>
 
-              <q-item-section side top>marco@gmail.com</q-item-section>
+              <q-item-section side top>{{ data.correo }}</q-item-section>
             </q-item>
           </q-list>
         </q-card-section>
       </q-card>
     </q-dialog>
 
-    <q-dialog v-model="alert" persistent>
-      <q-card>
-        <q-toolbar>
-          <q-toolbar-title class="text-center"
-            >Registrar Clientes</q-toolbar-title
-          >
-
-          <q-btn flat round dense icon="close" v-close-popup />
-        </q-toolbar>
-
-        <q-card-section class="q-pt-none">
+    <q-dialog v-model="cardFlag">
+      <q-card class="my-card my-card-2">
+        <q-img :src="product.img" />
+        <q-card-section>
+          <div class="row items-center">
+            <div class="col text-h6 ellipsis text-bold">
+              {{ product.nombre }}
+            </div>
+          </div>
+          <div class="row items-center q-mt-sm">
+            <div class="col text-subtitle2 ellipsis">
+              Precio: {{ product.precio }}
+            </div>
+            <div class="col text-subtitle2 ellipsis">
+              Stock: {{ product.stock }}
+            </div>
+          </div>
           <q-input
-            v-model="name"
-            label="Ruc *"
-            hint="Ruc"
-            lazy-rules
-            :rules="[(val) => (val && val.length > 0) || 'Escribe algo']"
-          >
-          </q-input>
-          <q-input
-            v-model="name"
-            label="Cédula *"
-            hint="Cédula"
-            lazy-rules
-            :rules="[(val) => (val && val.length > 0) || 'Escribe algo']"
-          >
-          </q-input>
-          <q-input
-            v-model="name"
-            label="Nombre *"
-            hint="Nombre"
-            lazy-rules
-            :rules="[(val) => (val && val.length > 0) || 'Escribe algo']"
-          >
-          </q-input>
-          <q-input
-            v-model="name"
-            label="Teléfono *"
-            hint="Teléfono"
-            lazy-rules
-            :rules="[(val) => (val && val.length > 0) || 'Escribe algo']"
-          >
-          </q-input>
-          <q-input
-            v-model="name"
-            label="Email *"
-            hint="Email"
-            lazy-rules
-            :rules="[(val) => (val && val.length > 0) || 'Escribe algo']"
-          >
-          </q-input>
-          <q-input
-            v-model="name"
-            label="Dirección *"
-            hint="Dirección"
-            lazy-rules
-            :rules="[(val) => (val && val.length > 0) || 'Escribe algo']"
-          >
-          </q-input>
+            type="number"
+            v-model="product.cantidad"
+            label="Cantidad"
+            outlined
+            class="q-mt-sm"
+          />
         </q-card-section>
-        <q-card-actions align="around">
+
+        <q-separator />
+
+        <q-card-actions align="right">
           <q-btn
-            align="center"
-            class="btn-fixed-width"
-            color="secondary"
             v-close-popup
-            label="Guardar"
-            style="width: 150px"
-          />
-          <q-btn
-            align="center"
-            class="btn-fixed-width"
+            flat
             color="primary"
-            label="Limpiar"
-            style="width: 150px"
+            @click="addProducts(product)"
+            label="Añadir"
           />
-          <q-btn
-            align="center"
-            class="btn-fixed-width"
-            color="negative"
-            label="Cancelar"
-            style="width: 150px"
-          />
+          <q-btn v-close-popup flat color="primary" label="Cancelar" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -324,17 +317,320 @@
 </template>
 
 <script>
-import { ref } from "vue";
-
 export default {
-  setup() {
+  name: "facturarPage",
+  data() {
     return {
-      model: ref("one"),
-      secondModel: ref("one"),
-      toolbar: ref(false),
-      alert: ref(false),
+      model: "one",
+      secondModel: "one",
+      modalSearchClient: false,
+      alert: false,
+      cardFlag: false,
+      product: {
+        id: "",
+        nombre: "",
+        stock: 0,
+        img: "",
+        cantidad: 1,
+        precio: 0,
+      },
+      products: [],
+      clientes: [
+        {
+          id: 1,
+          nombre_completo: "MARCO ANTONIO CARDENAS PEREZ",
+          cedula: "0944296730",
+          correo: "1",
+          saldo: 100,
+        },
+        {
+          id: 2,
+          nombre_completo: "JUAN ALEXANDER PEREZ GUAMAN",
+          cedula: "0944289545",
+          correo: "saddsdas",
+          saldo: 100,
+        },
+        {
+          id: 3,
+          nombre_completo: "JOSE BOLIVAR CARDENAS PEREZ",
+          cedula: "0944289545",
+          correo: "sadasds",
+          saldo: 100,
+        },
+        {
+          id: 4,
+          nombre_completo: "ROSA AMELIA PEREZ GUAMAN",
+          cedula: "0944289545",
+          correo: "asdddsa",
+          saldo: 50,
+        },
+        {
+          id: 5,
+          nombre_completo: "PRUEBA PREUEBA ",
+          cedula: "0944289545",
+          correo: "daads",
+          saldo: 100,
+        },
+        {
+          id: 6,
+          nombre_completo: "BRANDY ALEXANDER",
+          cedula: "0944289545",
+          correo: "dadasdas",
+          saldo: 80,
+        },
+      ],
+      columns: [
+        {
+          name: "name",
+          required: true,
+          label: "Dessert (100g serving)",
+          align: "left",
+          field: (row) => row.name,
+          format: (val) => `${val}`,
+          sortable: true,
+        },
+        {
+          name: "calories",
+          align: "center",
+          label: "Calories",
+          field: "calories",
+          sortable: true,
+        },
+        { name: "fat", label: "Fat (g)", field: "fat", sortable: true },
+      ],
+
+      rows: [
+        {
+          name: "Frozen Yogurt",
+          calories: 159,
+          fat: 6.0,
+          carbs: 24,
+          protein: 4.0,
+          sodium: 87,
+          calcium: "14%",
+          iron: "1%",
+        },
+        {
+          name: "Ice cream sandwich",
+          calories: 237,
+          fat: 9.0,
+          carbs: 37,
+          protein: 4.3,
+          sodium: 129,
+          calcium: "8%",
+          iron: "1%",
+        },
+        {
+          name: "Eclair",
+          calories: 262,
+          fat: 16.0,
+          carbs: 23,
+          protein: 6.0,
+          sodium: 337,
+          calcium: "6%",
+          iron: "7%",
+        },
+        {
+          name: "Cupcake",
+          calories: 305,
+          fat: 3.7,
+          carbs: 67,
+          protein: 4.3,
+          sodium: 413,
+          calcium: "3%",
+          iron: "8%",
+        },
+        {
+          name: "Gingerbread",
+          calories: 356,
+          fat: 16.0,
+          carbs: 49,
+          protein: 3.9,
+          sodium: 327,
+          calcium: "7%",
+          iron: "16%",
+        },
+        {
+          name: "Jelly bean",
+          calories: 375,
+          fat: 0.0,
+          carbs: 94,
+          protein: 0.0,
+          sodium: 50,
+          calcium: "0%",
+          iron: "0%",
+        },
+        {
+          name: "Lollipop",
+          calories: 392,
+          fat: 0.2,
+          carbs: 98,
+          protein: 0,
+          sodium: 38,
+          calcium: "0%",
+          iron: "2%",
+        },
+        {
+          name: "Honeycomb",
+          calories: 408,
+          fat: 3.2,
+          carbs: 87,
+          protein: 6.5,
+          sodium: 562,
+          calcium: "0%",
+          iron: "45%",
+        },
+        {
+          name: "Donut",
+          calories: 452,
+          fat: 25.0,
+          carbs: 51,
+          protein: 4.9,
+          sodium: 326,
+          calcium: "2%",
+          iron: "22%",
+        },
+        {
+          name: "KitKat",
+          calories: 518,
+          fat: 26.0,
+          carbs: 65,
+          protein: 7,
+          sodium: 54,
+          calcium: "12%",
+          iron: "6%",
+        },
+      ],
+      form: {
+        cliente_id: "",
+        nombre_completo: "",
+        cedula: "",
+        saldo: 0.0,
+        saldo_actual: 0.0,
+        productos: [],
+        descuento: 0.0,
+        subtotal_iva: 0.0,
+        subtotal: 0.0,
+        total: 0.0,
+        iva: 0.0,
+      },
+      productos1: [{ id: 1, nombre: "", cantidad: 1, precio: 0 }],
+      columns1: [
+        {
+          name: "nombre",
+          label: "Nombre del Producto",
+          align: "left",
+          field: "nombre",
+        },
+        {
+          name: "cantidad",
+          label: "Cantidad",
+          align: "right",
+          field: "cantidad",
+        },
+        {
+          name: "precio",
+          label: "Precio",
+          align: "right",
+          field: "precio",
+        },
+        { name: "total", label: "Total", align: "right", field: "total" },
+        { name: "acciones", label: "Acciones", align: "right" },
+      ],
     };
   },
+  watch: {},
+  methods: {
+    getProductInformation(data) {
+      console.log(data);
+      let self = this;
+      self.cardFlag = true;
+      self.product = { cantidad: 1, ...data };
+    },
+    getCustomerData(data) {
+      let self = this;
+      self.form.cliente_id = data.id;
+      self.form.nombre_completo = data.nombre_completo;
+      self.form.cedula = data.cedula;
+      self.form.saldo = data.saldo;
+      self.form.saldo_actual = data.saldo;
+
+      self.form.productos = [];
+      self.form.descuento = 0.0;
+      self.form.subtotal_iva = 0.0;
+      self.form.subtotal = 0.0;
+      self.form.total = 0.0;
+      self.form.iva = 0.0;
+
+      self.modalSearchClient = false;
+      console.log(data);
+    },
+    triggerPositive() {
+      this.$q.notify({
+        type: "positive",
+        message: "Producto añadido correctamente.",
+      });
+    },
+    triggerNegative() {
+      this.$q.notify({
+        type: "negative",
+        message: "No tiene saldo suficiente.",
+      });
+    },
+    addProducts(data) {
+      let self = this;
+      let total = self.form.productos.reduce(
+        (acc, producto) => acc + producto.total,
+        0
+      );
+
+      total += data.cantidad * data.precio;
+
+      if (total > self.form.saldo_actual) {
+        self.triggerNegative();
+        console.log("No tiene mas saldo");
+        return;
+      }
+
+      self.form.productos.push({
+        id: data.id,
+        nombre: data.nombre,
+        img: data.img,
+        cantidad: data.cantidad,
+        precio: data.precio,
+        total: data.cantidad * data.precio,
+      });
+
+      self.form.total = self.form.productos.reduce(
+        (acc, producto) => acc + producto.total,
+        0
+      );
+
+      self.form.saldo = self.form.saldo_actual - self.form.total;
+
+      self.product = {
+        id: "",
+        nombre: "",
+        stock: 0,
+        img: "",
+        cantidad: 1,
+        precio: 0,
+      };
+      self.cardFlag = false;
+    },
+  },
+  created() {
+    for (let index = 0; index < 22; index++) {
+      this.products.push({
+        id: index,
+        img: "https://cdn.quasar.dev/img/chicken-salad.jpg",
+        nombre: `Prueba ${index}`,
+        stock: 20,
+        precio: 30,
+      });
+    }
+  },
+  mounted() {},
 };
 </script>
 
