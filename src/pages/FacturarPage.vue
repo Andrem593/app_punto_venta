@@ -1,7 +1,7 @@
 <template>
   <q-page class="q-pa-md">
     <div class="row">
-      <div class="col-sm-12 col-xs-12 col-md-9">
+      <div class="col-sm-12 col-xs-12 col-md-8">
         <q-input v-model="text" class="text-h6">
           <template v-slot:prepend>
             <q-icon name="search" />
@@ -45,7 +45,13 @@
               <q-separator />
 
               <q-card-actions align="center">
-                <q-btn flat color="primary">Agregar</q-btn>
+                <q-btn
+                  :disable="form.cliente_id == ''"
+                  flat
+                  color="primary"
+                  @click="getProductInformation(data)"
+                  >Agregar</q-btn
+                >
               </q-card-actions>
             </q-card>
           </div>
@@ -53,7 +59,7 @@
 
         <q-separator spaced />
       </div>
-      <div class="col-sm-12 col-xs-12 col-md-3">
+      <div class="col-sm-12 col-xs-12 col-md-4">
         <div class="q-pa-md">
           <div class="justify-center">
             <q-card class="my-card" flat bordered>
@@ -75,27 +81,24 @@
                 <div class="text-subtitle2">Saldo: ${{ form.saldo }}</div>
               </q-card-section>
 
-              <q-separator />
-              <q-card-section>
-                <div class="q-pa-md">
-                  <q-table
-                    style="height: 400px"
-                    flat
-                    bordered
-                    ref="tableRef"
-                    title="Treats"
-                    :rows="rows"
-                    :columns="columns"
-                    :table-colspan="9"
-                    row-key="index"
-                    virtual-scroll
-                  ></q-table>
-                </div>
-              </q-card-section>
+              <!-- <q-separator /> -->
+              <!-- <q-card-section>
+                <q-table
+                  style="height: 400px"
+                  flat
+                  bordered
+                  virtual-scroll
+                  title="Treats"
+                  :rows="rows"
+                  :columns="columns"
+                  :rows-per-page-options="[0]"
+                  row-key="name"
+                />
+              </q-card-section> -->
 
-              <q-separator />
+              <!-- <q-separator /> -->
 
-              <div style="max-height: 30vh" class="scroll">
+              <!-- <div style="max-height: 30vh" class="scroll">
                 <q-card-actions class="q-pa-sm">
                   <div
                     class="row items-center"
@@ -113,7 +116,56 @@
                     </div>
                   </div>
                 </q-card-actions>
-              </div>
+              </div> -->
+              <q-card-section>
+                <q-table
+                  :rows="form.productos"
+                  :columns="columns1"
+                  row-key="id"
+                  :rows-per-page-options="[]"
+                  hide-bottom
+                >
+                  <template v-slot:body-cell-precio="props">
+                    <q-td :props="props">
+                      ${{ props.row.precio }}
+                      <!-- <q-input v-model="props.row.nombre" dense /> -->
+                    </q-td>
+                  </template>
+                  <template v-slot:body-cell-total="props">
+                    <q-td :props="props">
+                      ${{ props.row.total }}
+                      <!-- <q-input v-model="props.row.nombre" dense /> -->
+                    </q-td>
+                  </template>
+
+                  <!-- <template v-slot:body-cell-cantidad="props">
+                    <q-td :props="props">
+                      <q-input
+                        v-model="props.row.cantidad"
+                        type="number"
+                        dense
+                      />
+                    </q-td>
+                  </template> -->
+
+                  <!-- <template v-slot:body-cell-precio="props">
+                    <q-td :props="props">
+                      <q-input v-model="props.row.precio" type="number" dense />
+                    </q-td>
+                  </template> -->
+
+                  <template v-slot:body-cell-acciones="props">
+                    <q-td :props="props">
+                      <q-btn
+                        color="negative"
+                        icon="delete"
+                        @click="eliminarProducto(props.row)"
+                        dense
+                      />
+                    </q-td>
+                  </template>
+                </q-table>
+              </q-card-section>
               <q-separator />
               <q-card-actions class="q-pa-sm">
                 <div class="row items-center" style="width: 100%">
@@ -220,6 +272,47 @@
         </q-card-section>
       </q-card>
     </q-dialog>
+
+    <q-dialog v-model="cardFlag">
+      <q-card class="my-card my-card-2">
+        <q-img :src="product.img" />
+        <q-card-section>
+          <div class="row items-center">
+            <div class="col text-h6 ellipsis text-bold">
+              {{ product.nombre }}
+            </div>
+          </div>
+          <div class="row items-center q-mt-sm">
+            <div class="col text-subtitle2 ellipsis">
+              Precio: {{ product.precio }}
+            </div>
+            <div class="col text-subtitle2 ellipsis">
+              Stock: {{ product.stock }}
+            </div>
+          </div>
+          <q-input
+            type="number"
+            v-model="product.cantidad"
+            label="Cantidad"
+            outlined
+            class="q-mt-sm"
+          />
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-actions align="right">
+          <q-btn
+            v-close-popup
+            flat
+            color="primary"
+            @click="addProducts(product)"
+            label="Añadir"
+          />
+          <q-btn v-close-popup flat color="primary" label="Cancelar" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
@@ -232,6 +325,15 @@ export default {
       secondModel: "one",
       modalSearchClient: false,
       alert: false,
+      cardFlag: false,
+      product: {
+        id: "",
+        nombre: "",
+        stock: 0,
+        img: "",
+        cantidad: 1,
+        precio: 0,
+      },
       products: [],
       clientes: [
         {
@@ -279,7 +381,7 @@ export default {
       ],
       columns: [
         {
-          name: "desc",
+          name: "name",
           required: true,
           label: "Dessert (100g serving)",
           align: "left",
@@ -287,7 +389,16 @@ export default {
           format: (val) => `${val}`,
           sortable: true,
         },
+        {
+          name: "calories",
+          align: "center",
+          label: "Calories",
+          field: "calories",
+          sortable: true,
+        },
+        { name: "fat", label: "Fat (g)", field: "fat", sortable: true },
       ],
+
       rows: [
         {
           name: "Frozen Yogurt",
@@ -329,12 +440,73 @@ export default {
           calcium: "3%",
           iron: "8%",
         },
+        {
+          name: "Gingerbread",
+          calories: 356,
+          fat: 16.0,
+          carbs: 49,
+          protein: 3.9,
+          sodium: 327,
+          calcium: "7%",
+          iron: "16%",
+        },
+        {
+          name: "Jelly bean",
+          calories: 375,
+          fat: 0.0,
+          carbs: 94,
+          protein: 0.0,
+          sodium: 50,
+          calcium: "0%",
+          iron: "0%",
+        },
+        {
+          name: "Lollipop",
+          calories: 392,
+          fat: 0.2,
+          carbs: 98,
+          protein: 0,
+          sodium: 38,
+          calcium: "0%",
+          iron: "2%",
+        },
+        {
+          name: "Honeycomb",
+          calories: 408,
+          fat: 3.2,
+          carbs: 87,
+          protein: 6.5,
+          sodium: 562,
+          calcium: "0%",
+          iron: "45%",
+        },
+        {
+          name: "Donut",
+          calories: 452,
+          fat: 25.0,
+          carbs: 51,
+          protein: 4.9,
+          sodium: 326,
+          calcium: "2%",
+          iron: "22%",
+        },
+        {
+          name: "KitKat",
+          calories: 518,
+          fat: 26.0,
+          carbs: 65,
+          protein: 7,
+          sodium: 54,
+          calcium: "12%",
+          iron: "6%",
+        },
       ],
       form: {
         cliente_id: "",
         nombre_completo: "",
         cedula: "",
         saldo: 0.0,
+        saldo_actual: 0.0,
         productos: [],
         descuento: 0.0,
         subtotal_iva: 0.0,
@@ -342,19 +514,109 @@ export default {
         total: 0.0,
         iva: 0.0,
       },
+      productos1: [{ id: 1, nombre: "", cantidad: 1, precio: 0 }],
+      columns1: [
+        {
+          name: "nombre",
+          label: "Nombre del Producto",
+          align: "left",
+          field: "nombre",
+        },
+        {
+          name: "cantidad",
+          label: "Cantidad",
+          align: "right",
+          field: "cantidad",
+        },
+        {
+          name: "precio",
+          label: "Precio",
+          align: "right",
+          field: "precio",
+        },
+        { name: "total", label: "Total", align: "right", field: "total" },
+        { name: "acciones", label: "Acciones", align: "right" },
+      ],
     };
   },
   watch: {},
   methods: {
+    getProductInformation(data) {
+      console.log(data);
+      let self = this;
+      self.cardFlag = true;
+      self.product = { cantidad: 1, ...data };
+    },
     getCustomerData(data) {
       let self = this;
-      self.form.id = data.id;
+      self.form.cliente_id = data.id;
       self.form.nombre_completo = data.nombre_completo;
       self.form.cedula = data.cedula;
       self.form.saldo = data.saldo;
+      self.form.saldo_actual = data.saldo;
+
+      self.form.productos = [];
+      self.form.descuento = 0.0;
+      self.form.subtotal_iva = 0.0;
+      self.form.subtotal = 0.0;
+      self.form.total = 0.0;
+      self.form.iva = 0.0;
 
       self.modalSearchClient = false;
       console.log(data);
+    },
+    triggerPositive() {
+      this.$q.notify({
+        type: "positive",
+        message: "Producto añadido correctamente.",
+      });
+    },
+    triggerNegative() {
+      this.$q.notify({
+        type: "negative",
+        message: "No tiene saldo suficiente.",
+      });
+    },
+    addProducts(data) {
+      let self = this;
+      let total = self.form.productos.reduce(
+        (acc, producto) => acc + producto.total,
+        0
+      );
+
+      total += data.cantidad * data.precio;
+
+      if (total > self.form.saldo_actual) {
+        self.triggerNegative();
+        console.log("No tiene mas saldo");
+        return;
+      }
+
+      self.form.productos.push({
+        id: data.id,
+        nombre: data.nombre,
+        img: data.img,
+        cantidad: data.cantidad,
+        precio: data.precio,
+        total: data.cantidad * data.precio,
+      });
+
+      self.form.total = self.form.productos.reduce(
+        (acc, producto) => acc + producto.total,
+        0
+      );
+
+      self.form.saldo = self.form.saldo_actual - self.form.total;
+
+      self.product = {
+        id: "",
+        nombre: "",
+        stock: 0,
+        img: "",
+        cantidad: 1,
+        precio: 0,
+      };
+      self.cardFlag = false;
     },
   },
   created() {
@@ -364,6 +626,7 @@ export default {
         img: "https://cdn.quasar.dev/img/chicken-salad.jpg",
         nombre: `Prueba ${index}`,
         stock: 20,
+        precio: 30,
       });
     }
   },
