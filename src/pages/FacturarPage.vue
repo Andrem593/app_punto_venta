@@ -16,7 +16,7 @@
           unelevated
           toggle-color="primary"
           color="white"
-          size="25px"
+          size="15px"
           text-color="primary"
           :options="[
             { label: 'CATEGORIAS', value: 'one' },
@@ -28,17 +28,17 @@
         <div style="max-height: 60vh" class="scroll">
           <div class="q-pa-md row justify-center q-gutter-md">
             <q-card
-              class="my-card my-card-2"
+              class="my-card"
               flat
               bordered
               v-for="(data, index) in products"
               :key="index"
             >
-              <q-img :src="data.img" class="my-img" />
+              <q-img :src="data.img" class="my-img"  style="width: 90px; height: 100px"/>
 
               <q-card-section>
                 <div class="row no-wrap items-center">
-                  <div class="col text-h6 ellipsis">{{ data.nombre }}</div>
+                  <div class="col ellipsis">{{ data.nombre }}</div>
                 </div>
               </q-card-section>
 
@@ -48,6 +48,7 @@
                 <q-btn
                   :disable="form.cliente_id == ''"
                   flat
+                  style="font-size: 10px"
                   color="primary"
                   @click="getProductInformation(data)"
                   >Agregar</q-btn
@@ -63,18 +64,21 @@
         <div class="q-pa-md">
           <div class="justify-center">
             <q-card class="my-card" flat bordered>
-              <q-card-section class="text-right">
-                <q-btn
-                  @click="modalSearchClient = true"
-                  color="secondary"
-                  icon="person"
-                  icon-right="search"
-                  label="Cliente"
-                />
-              </q-card-section>
-              <q-card-section class="text-center">
-                <div class="text-h6">{{ form.nombre_completo }}</div>
-                <div class="text-subtitle2">{{ form.cedula }}</div>
+      
+              <q-card-section class="row items-center">
+                <div class="col text-center">
+                  <div style="font-size: 18px;">{{ form.nombre_completo }}</div>
+                  <div class="text-subtitle2">{{ form.cedula }}</div>
+                </div>
+                <div class="col-auto">
+                  <q-btn
+                    @click="modalSearchClient = true"
+                    color="secondary"
+                    icon="search"
+                    icon-right="person"
+                 
+                  />
+                </div>
               </q-card-section>
               <q-separator />
               <q-card-section>
@@ -159,15 +163,15 @@
                       <q-btn
                         color="negative"
                         icon="delete"
-                        @click="eliminarProducto(props.row)"
+                        @click="deleteProduct(props.row, props.rowIndex)"
                         dense
                       />
                     </q-td>
                   </template>
                 </q-table>
               </q-card-section>
-              <q-separator />
-              <q-card-actions class="q-pa-sm">
+              <!-- <q-separator /> -->
+              <!-- <q-card-actions class="q-pa-sm">
                 <div class="row items-center" style="width: 100%">
                   <q-item-label class="col text-start">Descuento:</q-item-label>
                   <div class="col-auto row justify-end">
@@ -176,10 +180,10 @@
                     >
                   </div>
                 </div>
-              </q-card-actions>
-              <q-separator />
+              </q-card-actions> -->
+              <!-- <q-separator /> -->
 
-              <q-card-actions class="q-pa-sm">
+              <!-- <q-card-actions class="q-pa-sm">
                 <div class="row items-center" style="width: 100%">
                   <q-item-label class="col text-start"
                     >Subtotal I.V.A:</q-item-label
@@ -190,7 +194,7 @@
                     >
                   </div>
                 </div>
-              </q-card-actions>
+              </q-card-actions> -->
               <q-card-actions class="q-pa-sm">
                 <div class="row items-center" style="width: 100%">
                   <q-item-label class="col text-start">Subtotal:</q-item-label>
@@ -227,6 +231,14 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <div class="col-md-12">
+        <q-btn-group spread>
+          <q-btn color="purple" label="GUARDAR" icon="timeline" />
+          <q-btn color="red" label="PAGAR" icon="visibility" />
+         
+        </q-btn-group>
       </div>
     </div>
 
@@ -274,7 +286,7 @@
     </q-dialog>
 
     <q-dialog v-model="cardFlag">
-      <q-card class="my-card my-card-2">
+      <q-card class="my-card">
         <q-img :src="product.img" />
         <q-card-section>
           <div class="row items-center">
@@ -284,7 +296,7 @@
           </div>
           <div class="row items-center q-mt-sm">
             <div class="col text-subtitle2 ellipsis">
-              Precio: {{ product.precio }}
+              Precio: ${{ product.precio }}
             </div>
             <div class="col text-subtitle2 ellipsis">
               Stock: {{ product.stock }}
@@ -341,21 +353,21 @@ export default {
           nombre_completo: "MARCO ANTONIO CARDENAS PEREZ",
           cedula: "0944296730",
           correo: "1",
-          saldo: 100,
+          saldo: 1000,
         },
         {
           id: 2,
           nombre_completo: "JUAN ALEXANDER PEREZ GUAMAN",
           cedula: "0944289545",
           correo: "saddsdas",
-          saldo: 100,
+          saldo: 1000,
         },
         {
           id: 3,
           nombre_completo: "JOSE BOLIVAR CARDENAS PEREZ",
           cedula: "0944289545",
           correo: "sadasds",
-          saldo: 100,
+          saldo: 1000,
         },
         {
           id: 4,
@@ -369,7 +381,7 @@ export default {
           nombre_completo: "PRUEBA PREUEBA ",
           cedula: "0944289545",
           correo: "daads",
-          saldo: 100,
+          saldo: 1000,
         },
         {
           id: 6,
@@ -383,7 +395,7 @@ export default {
         {
           name: "name",
           required: true,
-          label: "Dessert (100g serving)",
+          label: "Dessert (1000g serving)",
           align: "left",
           field: (row) => row.name,
           format: (val) => `${val}`,
@@ -518,13 +530,13 @@ export default {
       columns1: [
         {
           name: "nombre",
-          label: "Nombre del Producto",
+          label: "Nombre",
           align: "left",
           field: "nombre",
         },
         {
           name: "cantidad",
-          label: "Cantidad",
+          label: "Cant.",
           align: "right",
           field: "cantidad",
         },
@@ -535,7 +547,7 @@ export default {
           field: "precio",
         },
         { name: "total", label: "Total", align: "right", field: "total" },
-        { name: "acciones", label: "Acciones", align: "right" },
+        { name: "acciones", label: "", align: "right" },
       ],
     };
   },
@@ -618,6 +630,13 @@ export default {
       };
       self.cardFlag = false;
     },
+    deleteProduct(data, indice){
+      let self = this ;
+
+      //Ver si se devuelve al stock
+      self.form.productos.splice(indice, 1);
+
+    }
   },
   created() {
     for (let index = 0; index < 22; index++) {
@@ -647,7 +666,7 @@ export default {
   object-fit: cover; /* Ajuste para cubrir completamente el espacio asignado */
 }
 .my-card-2 {
-  width: 250px;
+  width: 200;
   max-width: calc(100% / 6 - 20px); /* Ancho máximo de cada tarjeta */
   margin: 10px; /* Margen entre tarjetas */
 }
