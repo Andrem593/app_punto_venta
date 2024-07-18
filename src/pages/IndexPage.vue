@@ -20,10 +20,11 @@
             class="q-mx-xs"
             size="32px"
             style="width: 250px"
-            @click="alert = true"
+            @click="showModal"
           />
           <q-btn
             label="Facturar"
+            @click="goToFacturar"
             color="primary"
             class="q-mx-xs"
             style="width: 250px"
@@ -33,20 +34,21 @@
       </div>
     </div>
 
-    <q-dialog v-model="alert" persistent>
+    <q-dialog v-model="cajaModal" persistent>
       <q-card>
-        <q-card-section>
-          <div class="text-h6">Apertura de Caja</div>
-        </q-card-section>
+        <q-form @submit="saveData" @reset="onReset" class="q-gutter-md">
+          <q-card-section>
+            <div class="text-h6">Apertura de Caja</div>
+          </q-card-section>
 
-        <q-card-section class="q-pt-none">
-          <q-form @submit="onSubmit" @reset="onReset" class="q-gutter-md">
+          <q-card-section class="q-pt-none">
             <q-input
-              v-model="name"
+              v-model="form.secuencia"
+              type="number"
               label="Secuencia *"
               hint="Secuencia"
               lazy-rules
-              :rules="[(val) => (val && val.length > 0) || 'Escribe algo']"
+              :rules="[(val) => (val && val > 0) || 'Escribe algo']"
             >
               <template v-slot:after>
                 <q-btn round dense flat icon="search" />
@@ -55,20 +57,16 @@
 
             <q-input
               type="text"
-              v-model="fecha"
+              v-model="fechaTotal"
               label="Fecha y Hora *"
               readonly
               lazy-rules
-              :rules="[
-                (val) => (val !== null && val !== '') || 'Please type your age',
-                (val) => (val > 0 && val < 100) || 'Please type a real age',
-              ]"
             >
             </q-input>
 
             <q-input
               type="number"
-              v-model="age"
+              v-model="form.monto_inicial"
               label="Monto Inicial *"
               lazy-rules
               :rules="[
@@ -80,42 +78,46 @@
 
             <q-input
               type="number"
-              v-model="age"
+              v-model="form.ticket_promedio"
               label="Ticket Promedio *"
               lazy-rules
               :rules="[
                 (val) =>
-                  (val !== null && val !== '') || 'Escribir una cantidad',
+                  (val !== null && val > 0) ||
+                  'Escribir una cantidad mayor a cero',
               ]"
             >
             </q-input>
-          </q-form>
-        </q-card-section>
+          </q-card-section>
 
-        <q-card-actions align="around">
-          <q-btn
-            align="center"
-            class="btn-fixed-width"
-            color="secondary"
-            v-close-popup
-            label="Abrir"
-            style="width: 150px"
-          />
-          <q-btn
-            align="center"
-            class="btn-fixed-width"
-            color="primary"
-            label="Limpiar"
-            style="width: 150px"
-          />
-          <q-btn
-            align="center"
-            class="btn-fixed-width"
-            color="negative"
-            label="Cancelar"
-            style="width: 150px"
-          />
-        </q-card-actions>
+          <q-card-actions align="around">
+            <q-btn
+              align="center"
+              class="btn-fixed-width"
+              color="secondary"
+              type="submit"
+              label="Abrir"
+              style="width: 150px"
+            />
+            <q-btn
+              @click="clearData"
+              align="center"
+              class="btn-fixed-width"
+              color="primary"
+              label="Limpiar"
+              type="reset"
+              style="width: 150px"
+            />
+            <q-btn
+              align="center"
+              class="btn-fixed-width"
+              color="negative"
+              label="Cancelar"
+              v-close-popup
+              style="width: 150px"
+            />
+          </q-card-actions>
+        </q-form>
       </q-card>
     </q-dialog>
     <!-- <div class="q-pa-md q-gutter-sm full-height">
@@ -130,23 +132,72 @@
 </template>
 
 <script>
-import { ref } from "vue";
-
 export default {
-  setup() {
+  name: "indexPage",
+  data() {
     return {
-      alert: ref(false),
-      confirm: ref(false),
-      prompt: ref(false),
-      fecha: ref("2024-02-25 20:20:00"),
-
-      address: ref(""),
-
-      selectedDate: ref(""),
-      selectedTime: ref(""),
-      showDatePicker: ref(false),
-      showTimePicker: ref(false),
+      form: {
+        id: "",
+        secuencia: 1,
+        fecha: "",
+        hora: "",
+        monto_inicial: 1,
+        ticket_promedio: 0,
+      },
+      cajaModal: false,
     };
+  },
+  computed: {
+    fechaTotal() {
+      let self = this;
+      // let now = new Date();
+      // return now.toLocaleString();
+      return `${self.form.fecha}   ${self.form.hora}`;
+    },
+  },
+  methods: {
+    showModal() {
+      let self = this;
+      let now = new Date();
+      let fecha = now.toISOString().split("T")[0]; // Formato YYYY-MM-DD
+      let hora = now.toTimeString().split(" ")[0]; // Formato HH:MM:SS
+      self.form.fecha = fecha;
+      self.form.hora = hora;
+      self.cajaModal = true;
+    },
+    saveData() {
+      let self = this;
+      console.log(self.form, "Guraddo");
+      self.cajaModal = false;
+      self.triggerPositive("Guardado Correctamente");
+    },
+    clearData() {
+      let self = this;
+      let now = new Date();
+      let fecha = now.toISOString().split("T")[0]; // Formato YYYY-MM-DD
+      let hora = now.toTimeString().split(" ")[0]; // Formato HH:MM:SS
+
+      self.form.monto_inicial = 1;
+      self.form.ticket_promedio = 0;
+      self.form.fecha = fecha;
+      self.form.hora = hora;
+    },
+    triggerPositive(message) {
+      this.$q.notify({
+        type: "positive",
+        message: message,
+      });
+    },
+    triggerNegative(message) {
+      this.$q.notify({
+        type: "negative",
+        message: message,
+      });
+    },
+    goToFacturar() {
+      let self = this;
+      self.$router.push({ path: "/principal/facturar" });
+    },
   },
 };
 </script>

@@ -2,7 +2,11 @@
   <q-page class="q-pa-md">
     <div class="row">
       <div class="col-sm-12 col-xs-12 col-md-8">
-        <q-input v-model="text" class="text-h6">
+        <q-input
+          v-model="searchProduct"
+          class="text-h6"
+          @change="getAllProducts"
+        >
           <template v-slot:prepend>
             <q-icon name="search" />
           </template>
@@ -28,14 +32,18 @@
         <div style="max-height: 60vh" class="scroll">
           <div class="q-pa-md row justify-center q-gutter-md">
             <q-card
-              style="width: 100px;"
+              style="width: 100px"
               class="my-card"
               flat
               bordered
               v-for="(data, index) in products"
               :key="index"
             >
-              <q-img :src="data.img" class="my-img"  style="width: 100px; height: 100px"/>
+              <q-img
+                :src="data.img"
+                class="my-img"
+                style="width: 100px; height: 100px"
+              />
 
               <q-card-section>
                 <div class="row no-wrap items-center">
@@ -63,10 +71,9 @@
         <div class="q-pa-md">
           <div class="justify-center">
             <q-card class="my-card" flat bordered>
-      
               <q-card-section class="row items-center">
                 <div class="col text-center">
-                  <div style="font-size: 18px;">{{ form.nombre_completo }}</div>
+                  <div style="font-size: 18px">{{ form.nombre_completo }}</div>
                   <div class="text-subtitle2">{{ form.cedula }}</div>
                 </div>
                 <div class="col-auto">
@@ -75,7 +82,6 @@
                     color="secondary"
                     icon="search"
                     icon-right="person"
-                 
                   />
                 </div>
               </q-card-section>
@@ -120,14 +126,20 @@
                   </div>
                 </q-card-actions>
               </div> -->
-              <q-card-section>
-                <div style="max-height: 60vh; overflow-y: auto;" class="scroll">
+
+              <q-card-section class="q-pa-sm">
+                <div style="width: 100%; height: 300px; overflow: auto">
                   <q-table
+                    flat
+                    bordered
                     :rows="form.productos"
                     :columns="columns1"
                     row-key="id"
+                    virtual-scroll
+                    v-model:pagination="pagination"
                     :rows-per-page-options="[]"
                     hide-bottom
+                    class="custom-table"
                   >
                     <template v-slot:body-cell-precio="props">
                       <q-td :props="props">
@@ -223,11 +235,11 @@
         <div class="q-mt-md q-mx-md q-pa-md" style="background: #1976d2">
           <div class="row items-center" style="width: 100%">
             <q-item-label class="col text-start" style="color: white"
-              >TOTAL</q-item-label
+              ><strong>TOTAL</strong></q-item-label
             >
             <div class="col-auto row justify-end">
               <q-item-label class="col text-start" style="color: white"
-                >${{ form.total }}</q-item-label
+                ><strong>${{ form.total }}</strong></q-item-label
               >
             </div>
           </div>
@@ -236,9 +248,18 @@
 
       <div class="col-md-12">
         <q-btn-group spread>
-          <q-btn style="background-color: #00CFFF; color: white;font-size: 20px;" label="GUARDAR"   icon="save" />
-          <q-btn color="green" label="PAGAR" style="font-size: 20px;"  icon="money" />
-         
+          <q-btn
+            style="background-color: #00cfff; color: white; font-size: 20px"
+            label="GUARDAR"
+            @click="save"
+            icon="save"
+          />
+          <q-btn
+            color="green"
+            label="PAGAR"
+            style="font-size: 20px"
+            icon="money"
+          />
         </q-btn-group>
       </div>
     </div>
@@ -527,6 +548,10 @@ export default {
         total: 0.0,
         iva: 0.0,
       },
+      searchProduct: "",
+      pagination: {
+        rowsPerPage: 0,
+      },
       productos1: [{ id: 1, nombre: "", cantidad: 1, precio: 0 }],
       columns1: [
         {
@@ -552,8 +577,19 @@ export default {
       ],
     };
   },
-  watch: {},
+  watch: {
+    searchProduct(value) {
+      let self = this;
+      self.getAllProducts(value);
+    },
+  },
   methods: {
+    getAllProducts(value) {
+      let self = this;
+      if (value != "") {
+        console.log("Buscar Productos: ", value);
+      }
+    },
     getProductInformation(data) {
       console.log(data);
       let self = this;
@@ -578,16 +614,16 @@ export default {
       self.modalSearchClient = false;
       console.log(data);
     },
-    triggerPositive() {
+    triggerPositive(message) {
       this.$q.notify({
         type: "positive",
-        message: "Producto añadido correctamente.",
+        message: message,
       });
     },
-    triggerNegative() {
+    triggerNegative(message) {
       this.$q.notify({
         type: "negative",
-        message: "No tiene saldo suficiente.",
+        message: message,
       });
     },
     addProducts(data) {
@@ -597,22 +633,35 @@ export default {
         0
       );
 
-      total += data.cantidad * data.precio;
+      total += parseFloat(data.cantidad) * data.precio;
 
       if (total > self.form.saldo_actual) {
-        self.triggerNegative();
+        self.triggerNegative("No tiene suficiente saldo");
         console.log("No tiene mas saldo");
         return;
       }
 
-      self.form.productos.push({
-        id: data.id,
-        nombre: data.nombre,
-        img: data.img,
-        cantidad: data.cantidad,
-        precio: data.precio,
-        total: data.cantidad * data.precio,
-      });
+      let existingProduct = self.form.productos.find(
+        (producto) => producto.id === data.id
+      );
+
+      if (existingProduct) {
+        // Si el producto ya existe, actualizar cantidad y total
+        existingProduct.cantidad =
+          parseFloat(existingProduct.cantidad) + parseFloat(data.cantidad); // Sumar la nueva cantidad
+        existingProduct.total =
+          existingProduct.cantidad * existingProduct.precio; // Recalcular el total
+      } else {
+        // Si el producto no existe, agregarlo a la lista
+        self.form.productos.push({
+          id: data.id,
+          nombre: data.nombre,
+          img: data.img,
+          cantidad: data.cantidad,
+          precio: data.precio,
+          total: data.cantidad * data.precio,
+        });
+      }
 
       self.form.total = self.form.productos.reduce(
         (acc, producto) => acc + producto.total,
@@ -631,13 +680,21 @@ export default {
       };
       self.cardFlag = false;
     },
-    deleteProduct(data, indice){
-      let self = this ;
+    deleteProduct(data, indice) {
+      let self = this;
 
       //Ver si se devuelve al stock
       self.form.productos.splice(indice, 1);
-
-    }
+    },
+    save() {
+      let self = this;
+      console.log(self.form);
+      if (self.form.id != "" && self.form.productos.length > 0) {
+        self.triggerPositive("Guardado");
+      } else {
+        self.triggerNegative("Debe tener añadido por lo mínimo un producto");
+      }
+    },
   },
   created() {
     for (let index = 0; index < 22; index++) {
@@ -694,5 +751,17 @@ export default {
       100% / 1 - 20px
     ); /* Aún más reducido para pantallas muy pequeñas */
   }
+}
+
+.custom-table .q-table__middle,
+.custom-table .q-table__container {
+  height: 100%;
+}
+
+.custom-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--q-table-header-background-color, white);
 }
 </style>
