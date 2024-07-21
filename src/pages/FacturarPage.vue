@@ -2,11 +2,9 @@
   <q-page class="q-pa-md">
     <div class="row">
       <div class="col-sm-12 col-xs-12 col-md-8">
-        <q-input
-          v-model="searchProduct"
-          class="text-h6"
-          @change="getAllProducts"
-        >
+        <q-btn color="black" label="Pedidos Guardados" @click="openSave" />
+        <q-separator spaced />
+        <q-input v-model="searchProduct" class="text-h6">
           <template v-slot:prepend>
             <q-icon name="search" />
           </template>
@@ -40,7 +38,14 @@
               :key="index"
             >
               <q-img
+                v-if="data.img && data.img != ''"
                 :src="data.img"
+                class="my-img"
+                style="width: 100px; height: 100px"
+              />
+              <q-img
+                v-else
+                src="src/assets/images/no-image.png"
                 class="my-img"
                 style="width: 100px; height: 100px"
               />
@@ -255,6 +260,7 @@
             icon="save"
           />
           <q-btn
+            @click="saveSale"
             color="green"
             label="PAGAR"
             style="font-size: 20px"
@@ -263,6 +269,63 @@
         </q-btn-group>
       </div>
     </div>
+
+    <q-dialog v-model="modalGuardadoClient">
+      <q-card style="width: 700px; max-width: 80vw">
+        <q-toolbar>
+          <q-avatar>
+            <img
+              src="https://contifico.com/wp-content/uploads/2020/06/isotipo-contifico-1.png"
+            />
+          </q-avatar>
+
+          <q-toolbar-title class="text-center"
+            >Listado de Pedidos Guardados</q-toolbar-title
+          >
+
+          <q-btn flat round dense icon="close" v-close-popup />
+        </q-toolbar>
+        <q-card-section class="q-pa-sm">
+          <div style="width: 100%; height: 300px; overflow: auto">
+            <q-table
+              flat
+              bordered
+              :rows="pedidos_guardados"
+              :columns="pedidos_guardados_cabecera"
+              row-key="id"
+              virtual-scroll
+              v-model:pagination="pagination"
+              :rows-per-page-options="[]"
+              hide-bottom
+              class="custom-table"
+            >
+              <template v-slot:body-cell-precio="props">
+                <q-td :props="props"> ${{ props.row.precio }} </q-td>
+              </template>
+              <template v-slot:body-cell-total="props">
+                <q-td :props="props"> ${{ props.row.total }} </q-td>
+              </template>
+              <template v-slot:body-cell-acciones="props">
+                <q-td :props="props">
+                  <q-btn
+                    color="primary"
+                    icon="restore"
+                    @click="recoverOrder(props.row, props.rowIndex)"
+                    dense
+                  />
+                  <q-btn
+                    color="negative"
+                    icon="delete"
+                    @click="deleteOrder(props.row, props.rowIndex)"
+                    dense
+                  />
+                </q-td>
+              </template>
+            </q-table>
+          </div>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
 
     <q-dialog v-model="modalSearchClient">
       <q-card style="width: 700px; max-width: 80vw">
@@ -281,9 +344,9 @@
         </q-toolbar>
 
         <q-card-section>
-          <q-input v-model="name" label="Cliente" lazy-rules
+          <q-input v-model="searchClient" label="Cliente"
             ><template v-slot:prepend>
-              <q-icon name="search" />
+              <q-icon name="searchss" />
             </template>
           </q-input>
         </q-card-section>
@@ -292,9 +355,7 @@
           <q-list bordered class="rounded-borders">
             <q-item clickable v-ripple v-for="(data, i) in clientes" :key="i">
               <q-item-section @click="getCustomerData(data)">
-                <q-item-label lines="1">{{
-                  data.nombre_completo
-                }}</q-item-label>
+                <q-item-label lines="1">{{ data.nombres }}</q-item-label>
                 <q-item-label caption lines="2">
                   <span class="text-weight-bold">{{ data.cedula }}</span>
                 </q-item-label>
@@ -309,7 +370,8 @@
 
     <q-dialog v-model="cardFlag">
       <q-card class="my-card">
-        <q-img :src="product.img" />
+        <q-img v-if="product.img && product.img != ''" :src="product.img" />
+        <q-img v-else src="src/assets/images/no-image.png" />
         <q-card-section>
           <div class="row items-center">
             <div class="col text-h6 ellipsis text-bold">
@@ -317,9 +379,7 @@
             </div>
           </div>
           <div class="row items-center q-mt-sm">
-            <div class="col text-subtitle2 ellipsis">
-              Precio: ${{ product.precio }}
-            </div>
+            <div class="col text-subtitle2 ellipsis">${{ product.precio }}</div>
             <div class="col text-subtitle2 ellipsis">
               Stock: {{ product.stock }}
             </div>
@@ -327,9 +387,17 @@
           <q-input
             type="number"
             v-model="product.cantidad"
+            :max="product.stock"
+            :min="1"
             label="Cantidad"
             outlined
             class="q-mt-sm"
+            lazy-rules
+            :rules="[
+              (val) =>
+                (val > 0 && val <= product.stock) ||
+                'La cantidad debe estar dentro del rango',
+            ]"
           />
         </q-card-section>
 
@@ -337,7 +405,6 @@
 
         <q-card-actions align="right">
           <q-btn
-            v-close-popup
             flat
             color="primary"
             @click="addProducts(product)"
@@ -358,6 +425,7 @@ export default {
       model: "one",
       secondModel: "one",
       modalSearchClient: false,
+      modalGuardadoClient: false,
       alert: false,
       cardFlag: false,
       product: {
@@ -370,48 +438,13 @@ export default {
       },
       products: [],
       clientes: [
-        {
+        /*{
           id: 1,
           nombre_completo: "MARCO ANTONIO CARDENAS PEREZ",
           cedula: "0944296730",
           correo: "1",
           saldo: 1000,
-        },
-        {
-          id: 2,
-          nombre_completo: "JUAN ALEXANDER PEREZ GUAMAN",
-          cedula: "0944289545",
-          correo: "saddsdas",
-          saldo: 1000,
-        },
-        {
-          id: 3,
-          nombre_completo: "JOSE BOLIVAR CARDENAS PEREZ",
-          cedula: "0944289545",
-          correo: "sadasds",
-          saldo: 1000,
-        },
-        {
-          id: 4,
-          nombre_completo: "ROSA AMELIA PEREZ GUAMAN",
-          cedula: "0944289545",
-          correo: "asdddsa",
-          saldo: 50,
-        },
-        {
-          id: 5,
-          nombre_completo: "PRUEBA PREUEBA ",
-          cedula: "0944289545",
-          correo: "daads",
-          saldo: 1000,
-        },
-        {
-          id: 6,
-          nombre_completo: "BRANDY ALEXANDER",
-          cedula: "0944289545",
-          correo: "dadasdas",
-          saldo: 80,
-        },
+        },*/
       ],
       columns: [
         {
@@ -536,6 +569,7 @@ export default {
         },
       ],
       form: {
+        id: "",
         cliente_id: "",
         nombre_completo: "",
         cedula: "",
@@ -549,6 +583,7 @@ export default {
         iva: 0.0,
       },
       searchProduct: "",
+      searchClient: "",
       pagination: {
         rowsPerPage: 0,
       },
@@ -575,15 +610,191 @@ export default {
         { name: "total", label: "Total", align: "right", field: "total" },
         { name: "acciones", label: "", align: "right" },
       ],
+      pedidos_guardados_cabecera: [
+        {
+          name: "nombres",
+          label: "Cliente",
+          align: "left",
+          field: "nombres",
+        },
+        {
+          name: "fecha",
+          label: "Fecha",
+          align: "left",
+          field: "fecha",
+        },
+        {
+          name: "saldo",
+          label: "Saldo",
+          align: "right",
+          field: "saldo",
+        },
+        {
+          name: "total",
+          label: "$ Total",
+          align: "right",
+          field: "total",
+        },
+        { name: "acciones", label: "", align: "right" },
+      ],
+      pedidos_guardados: [
+        // {
+        //   id: 1,
+        //   nombres: "MARCO ",
+        //   saldo: 10,
+        //   total: 20,
+        // },
+        // {
+        //   id: 1,
+        //   nombres: "MARCO ",
+        //   saldo: 10,
+        //   total: 20,
+        // },
+        // {
+        //   id: 1,
+        //   nombres: "MARCO ",
+        //   saldo: 10,
+        //   total: 20,
+        // },
+        // {
+        //   id: 1,
+        //   nombres: "MARCO ",
+        //   saldo: 10,
+        //   total: 20,
+        // },
+        // {
+        //   id: 1,
+        //   nombres: "MARCO ",
+        //   saldo: 10,
+        //   total: 20,
+        // },
+        // {
+        //   id: 1,
+        //   nombres: "MARCO ",
+        //   saldo: 10,
+        //   total: 20,
+        // },
+        // {
+        //   id: 1,
+        //   nombres: "MARCO ",
+        //   saldo: 10,
+        //   total: 20,
+        // },
+        // {
+        //   id: 1,
+        //   nombres: "MARCO ",
+        //   saldo: 10,
+        //   total: 20,
+        // },
+        // {
+        //   id: 1,
+        //   nombres: "MARCO ",
+        //   saldo: 10,
+        //   total: 20,
+        // },
+        // {
+        //   id: 1,
+        //   nombres: "MARCO ",
+        //   saldo: 10,
+        //   total: 20,
+        // },
+        // {
+        //   id: 1,
+        //   nombres: "MARCO ",
+        //   saldo: 10,
+        //   total: 20,
+        // },
+        // {
+        //   id: 1,
+        //   nombres: "MARCO ",
+        //   saldo: 10,
+        //   total: 20,
+        // },
+        // {
+        //   id: 1,
+        //   nombres: "MARCO ",
+        //   saldo: 10,
+        //   total: 20,
+        // },
+      ],
     };
   },
   watch: {
     searchProduct(value) {
       let self = this;
-      self.getAllProducts(value);
+      self.getProducts(value);
+    },
+    searchClient(value) {
+      console.log(value);
+      let self = this;
+      self.getClients(value);
     },
   },
   methods: {
+    recoverOrder(data, indice) {
+      let self = this;
+      self.form = { ...data };
+      self.modalGuardadoClient = false;
+      self.triggerPositive("Pedido Recuperado");
+    },
+    deleteOrder(data, indice) {
+      let self = this;
+      this.$axios
+        .delete(`api/pedidos-encabezados/${data.id}`)
+        .then(({ data }) => {
+          self.pedidos_guardados.splice(indice, 1);
+          self.triggerPositive("Pedido Eliminado");
+        })
+        .catch((error) => {
+          self.triggerNegative(error);
+        });
+    },
+    getSavedOrders() {
+      let self = this;
+      this.$axios
+        .get(`api/pedidos-encabezados`)
+        .then(({ data }) => {
+          self.pedidos_guardados = data;
+        })
+        .catch((error) => {
+          self.triggerNegative(error);
+        });
+    },
+    getProducts(nombre = null) {
+      let self = this;
+      let filtro = "";
+      if (nombre != null && nombre.length > 2) {
+        filtro = `&nombre=${nombre}`;
+      }
+      this.$axios
+        .get(`api/productos?perPage=all${filtro}`)
+        .then(({ data }) => {
+          self.products = data;
+        })
+        .catch(({ error }) => {
+          self.triggerNegative(error);
+        });
+    },
+    openSave() {
+      let self = this;
+      self.modalGuardadoClient = true;
+      self.clearForm();
+    },
+    getClients(nombres = null) {
+      let self = this;
+      let filtro = "";
+      if (nombres != null && nombres.length > 2) {
+        filtro = `&nombres=${nombres}`;
+      }
+      this.$axios
+        .get(`api/clientes?perPage=all${filtro}`)
+        .then(({ data }) => {
+          self.clientes = data;
+        })
+        .catch((error) => {
+          self.triggerNegative(error.error);
+        });
+    },
     getAllProducts(value) {
       let self = this;
       if (value != "") {
@@ -591,28 +802,59 @@ export default {
       }
     },
     getProductInformation(data) {
-      console.log(data);
       let self = this;
-      self.cardFlag = true;
-      self.product = { cantidad: 1, ...data };
+      this.$axios
+        .get(`api/producto/${data.id}`)
+        .then(({ data }) => {
+          self.product = { cantidad: 1, ...data };
+          self.cardFlag = true;
+        })
+        .catch((error) => {
+          self.triggerNegative(error.error);
+        });
     },
     getCustomerData(data) {
       let self = this;
       self.form.cliente_id = data.id;
-      self.form.nombre_completo = data.nombre_completo;
+      self.form.nombre_completo = data.nombres;
       self.form.cedula = data.cedula;
-      self.form.saldo = data.saldo;
-      self.form.saldo_actual = data.saldo;
+      self.form.saldo = data.valor;
+      self.form.saldo_actual = data.valor;
 
-      self.form.productos = [];
-      self.form.descuento = 0.0;
-      self.form.subtotal_iva = 0.0;
-      self.form.subtotal = 0.0;
-      self.form.total = 0.0;
-      self.form.iva = 0.0;
+      //Aqui devolver al stock
 
-      self.modalSearchClient = false;
-      console.log(data);
+      if (self.form.productos.length > 0) {
+        this.$axios
+          .post(`api/devolver-cantidad-productos`, {
+            productos: self.form.productos,
+          })
+          .then(({ data }) => {
+            self.form.productos = [];
+            self.form.descuento = 0.0;
+            self.form.subtotal_iva = 0.0;
+            self.form.subtotal = 0.0;
+            self.form.total = 0.0;
+            self.form.iva = 0.0;
+
+            self.modalSearchClient = false;
+          })
+          .catch((error) => {
+            if (error.response && error.response.data) {
+              self.triggerNegative(`${error.response.data.message}`);
+            } else {
+              self.triggerNegative("Ocurrió un error inesperado.");
+            }
+          });
+      } else {
+        self.form.productos = [];
+        self.form.descuento = 0.0;
+        self.form.subtotal_iva = 0.0;
+        self.form.subtotal = 0.0;
+        self.form.total = 0.0;
+        self.form.iva = 0.0;
+
+        self.modalSearchClient = false;
+      }
     },
     triggerPositive(message) {
       this.$q.notify({
@@ -628,6 +870,34 @@ export default {
     },
     addProducts(data) {
       let self = this;
+
+      //Validacion del Stock, ver si despues e descuenta al instante y ahi tendria
+      // que manejar otra logica
+      // let existingProductCant = self.form.productos.find(
+      //   (producto) => producto.producto_id === data.id
+      // );
+
+      // if (existingProductCant) {
+      //   let sumCantidad =
+      //     parseInt(existingProductCant.cantidad) + parseInt(data.cantidad);
+      //   if (sumCantidad > parseInt(data.stock)) {
+      //     self.triggerNegative(
+      //       "La cantidad total debe ser menor o igual al Stock"
+      //     );
+      //     return;
+      //   }
+      // }
+
+      // parseInt(data.cantidad) > 0 &&
+      if (parseInt(data.cantidad) == 0) {
+        self.triggerNegative("La cantidad debe ser mayor a 1");
+        return;
+      }
+      if (parseInt(data.cantidad) > parseInt(data.stock)) {
+        self.triggerNegative("La cantidad debe ser menor o igual al Stock");
+        return;
+      }
+
       let total = self.form.productos.reduce(
         (acc, producto) => acc + producto.total,
         0
@@ -637,75 +907,247 @@ export default {
 
       if (total > self.form.saldo_actual) {
         self.triggerNegative("No tiene suficiente saldo");
-        console.log("No tiene mas saldo");
         return;
       }
 
-      let existingProduct = self.form.productos.find(
-        (producto) => producto.id === data.id
-      );
+      this.$axios
+        .get(`api/cambio-stock-producto/${data.id}/${data.cantidad}/1`)
+        .then((response) => {
+          let existingProduct = self.form.productos.find(
+            (producto) => producto.producto_id === data.id
+          );
 
-      if (existingProduct) {
-        // Si el producto ya existe, actualizar cantidad y total
-        existingProduct.cantidad =
-          parseFloat(existingProduct.cantidad) + parseFloat(data.cantidad); // Sumar la nueva cantidad
-        existingProduct.total =
-          existingProduct.cantidad * existingProduct.precio; // Recalcular el total
-      } else {
-        // Si el producto no existe, agregarlo a la lista
-        self.form.productos.push({
-          id: data.id,
-          nombre: data.nombre,
-          img: data.img,
-          cantidad: data.cantidad,
-          precio: data.precio,
-          total: data.cantidad * data.precio,
+          if (existingProduct) {
+            // Si el producto ya existe, actualizar cantidad y total
+            existingProduct.cantidad =
+              parseFloat(existingProduct.cantidad) + parseFloat(data.cantidad); // Sumar la nueva cantidad
+            existingProduct.total =
+              existingProduct.cantidad * existingProduct.precio; // Recalcular el total
+          } else {
+            // Si el producto no existe, agregarlo a la lista
+            self.form.productos.push({
+              producto_id: data.id,
+              nombre: data.nombre,
+              img: data.img,
+              cantidad: data.cantidad,
+              precio: data.precio,
+              total: parseFloat(data.cantidad) * parseFloat(data.precio),
+            });
+          }
+
+          self.form.total = self.form.productos.reduce(
+            (acc, producto) => acc + producto.total,
+            0
+          );
+
+          self.form.total = self.form.total.toFixed(2);
+
+          self.form.saldo =
+            parseFloat(self.form.saldo_actual) - parseFloat(self.form.total);
+
+          self.form.saldo = self.form.saldo.toFixed(2);
+
+          self.product = {
+            id: "",
+            nombre: "",
+            stock: 0,
+            img: "",
+            cantidad: 1,
+            precio: 0,
+          };
+          self.cardFlag = false;
+        })
+        .catch(() => {
+          self.triggerNegative("Ha ocurrido un error al agregar el producto");
         });
-      }
-
-      self.form.total = self.form.productos.reduce(
-        (acc, producto) => acc + producto.total,
-        0
-      );
-
-      self.form.saldo = self.form.saldo_actual - self.form.total;
-
-      self.product = {
-        id: "",
-        nombre: "",
-        stock: 0,
-        img: "",
-        cantidad: 1,
-        precio: 0,
-      };
-      self.cardFlag = false;
     },
     deleteProduct(data, indice) {
       let self = this;
 
-      //Ver si se devuelve al stock
-      self.form.productos.splice(indice, 1);
+      this.$axios
+        .get(`api/cambio-stock-producto/${data.producto_id}/${data.cantidad}/2`)
+        .then((response) => {
+          self.form.productos.splice(indice, 1);
+
+          self.form.total = self.form.productos.reduce(
+            (acc, producto) => acc + producto.total,
+            0
+          );
+
+          self.form.total = self.form.total.toFixed(2);
+
+          self.form.saldo =
+            parseFloat(self.form.saldo_actual) - parseFloat(self.form.total);
+          self.form.saldo = self.form.saldo.toFixed(2);
+        })
+        .catch(() => {
+          self.triggerNegative("Ha ocurrido un error al eliminar");
+        });
+    },
+    clearForm() {
+      let self = this;
+      self.form = {
+        cliente_id: "",
+        nombre_completo: "",
+        cedula: "",
+        saldo: 0.0,
+        saldo_actual: 0.0,
+        productos: [],
+        descuento: 0.0,
+        subtotal_iva: 0.0,
+        subtotal: 0.0,
+        total: 0.0,
+        iva: 0.0,
+      };
+    },
+    saveSale() {
+      let self = this;
+      this.$axios
+        .post(`api/venta-encabezados`, { ...self.form })
+        .then(({ data }) => {
+          self.getClients();
+          self.getProducts();
+          self.getSavedOrders();
+          self.triggerPositive("Venta Guardada");
+          self.clearForm();
+        })
+        .catch((error) => {
+          if (error.response && error.response.data) {
+            //Devuelvo todos los productos
+            if (error.response.status === 409) {
+              self.$axios
+                .post(`api/devolver-cantidad-productos`, {
+                  productos: self.form.productos,
+                })
+                .then(({ data }) => {
+                  self.form.productos = [];
+                  self.form.descuento = 0.0;
+                  self.form.subtotal_iva = 0.0;
+                  self.form.subtotal = 0.0;
+                  self.form.total = 0.0;
+                  self.form.iva = 0.0;
+
+                  self.modalSearchClient = false;
+                })
+                .catch((error) => {
+                  if (error.response && error.response.data) {
+                    self.triggerNegative(`${error.response.data.message}`);
+                  } else {
+                    self.triggerNegative("Ocurrió un error inesperado.");
+                  }
+                });
+              self.triggerNegative(`${error.response.data.message}`);
+            }
+          } else {
+            self.triggerNegative("Ocurrió un error inesperado.");
+          }
+        });
     },
     save() {
       let self = this;
-      console.log(self.form);
-      if (self.form.id != "" && self.form.productos.length > 0) {
-        self.triggerPositive("Guardado");
+      if (self.form.productos.length > 0) {
+        if (self.form.id) {
+          //Verificar
+          this.$axios
+            .put(`api/pedidos-encabezados/${self.form.id}`, { ...self.form })
+            .then(({ data }) => {
+              self.getClients();
+              self.getProducts();
+              self.getSavedOrders();
+              self.triggerPositive("Guardado");
+              self.clearForm();
+            })
+            .catch((error) => {
+              if (error.response && error.response.data) {
+                //Devuelvo todos los productos
+                if (error.response.status === 409) {
+                  self.$axios
+                    .post(`api/devolver-cantidad-productos`, {
+                      productos: self.form.productos,
+                    })
+                    .then(({ data }) => {
+                      self.form.productos = [];
+                      self.form.descuento = 0.0;
+                      self.form.subtotal_iva = 0.0;
+                      self.form.subtotal = 0.0;
+                      self.form.total = 0.0;
+                      self.form.iva = 0.0;
+
+                      self.modalSearchClient = false;
+                    })
+                    .catch((error) => {
+                      if (error.response && error.response.data) {
+                        self.triggerNegative(`${error.response.data.message}`);
+                      } else {
+                        self.triggerNegative("Ocurrió un error inesperado.");
+                      }
+                    });
+                  self.triggerNegative(`${error.response.data.message}`);
+                }
+              } else {
+                self.triggerNegative("Ocurrió un error inesperado.");
+              }
+            });
+        } else {
+          this.$axios
+            .post(`api/pedidos-encabezados`, { ...self.form })
+            .then(({ data }) => {
+              self.getClients();
+              self.getProducts();
+              self.getSavedOrders();
+              self.triggerPositive("Guardado");
+              self.clearForm();
+            })
+            .catch((error) => {
+              if (error.response && error.response.data) {
+                //Devuelvo todos los productos
+                if (error.response.status === 409) {
+                  self.$axios
+                    .post(`api/devolver-cantidad-productos`, {
+                      productos: self.form.productos,
+                    })
+                    .then(({ data }) => {
+                      self.form.productos = [];
+                      self.form.descuento = 0.0;
+                      self.form.subtotal_iva = 0.0;
+                      self.form.subtotal = 0.0;
+                      self.form.total = 0.0;
+                      self.form.iva = 0.0;
+
+                      self.modalSearchClient = false;
+                    })
+                    .catch((error) => {
+                      if (error.response && error.response.data) {
+                        self.triggerNegative(`${error.response.data.message}`);
+                      } else {
+                        self.triggerNegative("Ocurrió un error inesperado.");
+                      }
+                    });
+                  self.triggerNegative(`${error.response.data.message}`);
+                }
+              } else {
+                self.triggerNegative("Ocurrió un error inesperado.");
+              }
+            });
+        }
       } else {
         self.triggerNegative("Debe tener añadido por lo mínimo un producto");
       }
     },
   },
   created() {
-    for (let index = 0; index < 22; index++) {
-      this.products.push({
-        id: index,
-        img: "https://cdn.quasar.dev/img/chicken-salad.jpg",
-        nombre: `Prueba ${index}`,
-        stock: 20,
-        precio: 30,
-      });
-    }
+    this.getClients();
+    this.getProducts();
+    this.getSavedOrders();
+    // for (let index = 0; index < 22; index++) {
+    //   this.products.push({
+    //     id: index,
+    //     img: "https://cdn.quasar.dev/img/chicken-salad.jpg",
+    //     nombre: `Prueba ${index}`,
+    //     stock: 20,
+    //     precio: 30,
+    //   });
+    // }
   },
   mounted() {},
 };

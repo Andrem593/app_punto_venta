@@ -47,50 +47,101 @@
           </div>
         </q-form>
 
-        <h2>Listado de Usuarios</h2>
+        <!-- <q-btn
+          label="clinets"
+          @click="getClients"
+          color="primary"
+          class="full-width"
+        />
+
+        <q-btn
+          label="Salir"
+          @click="logout"
+          color="primary"
+          class="full-width" -->
+        <!-- /> -->
+
+        <!-- <h2>Listado de Usuarios</h2>
         <ul>
           <li v-for="user in users" :key="user.id">
             {{ user.name }} - {{ user.email }}
           </li>
-        </ul>
+        </ul> -->
       </div>
     </q-card>
   </q-page>
 </template>
 <script>
-import { ref } from "vue";
-const { ipcRenderer } = require("electron");
+// import { ref } from "vue";
+// const { ipcRenderer } = require("electron");
 
 export default {
   data() {
     return {
       form: {
-        email: "",
-        password: "",
+        email: "marco.cardenas1702@gmail.com",
+        password: "admin",
       },
       users: [],
     };
   },
   mounted() {
-    this.getUsers();
+    // this.getUsers();
   },
   methods: {
-    async getUsers() {
-      try {
-        const users = await ipcRenderer.invoke("get-users");
-        this.users = users;
-      } catch (err) {
-        console.error(
-          "Error al obtener usuarios desde el proceso principal:",
-          err
-        );
-      }
-    },
-    login() {
+    // async getUsers() {
+    //   try {
+    //     const users = await ipcRenderer.invoke("get-users");
+    //     this.users = users;
+    //   } catch (err) {
+    //     console.error(
+    //       "Error al obtener usuarios desde el proceso principal:",
+    //       err
+    //     );
+    //   }
+    // },
+    // getClients() {
+    //   console.log("sssggh");
+    //   let self = this;
+    //   this.$axios
+    //     .get(`api/clientes`)
+    //     .then(({ data }) => {
+    //       console.log(data);
+    //     })
+    //     .catch((error) => {
+    //       self.triggerNegative(error.error);
+    //     });
+    // },
+    async login() {
       let self = this;
       console.log(self.form);
-      self.triggerPositive("Correo Y password correctos");
-      self.$router.push({ path: "/principal" });
+
+      try {
+        const response = await this.$axios.post("/api/login", {
+          email: self.form.email,
+          password: self.form.password,
+        });
+        console.log(response);
+        const token = response.data.access_token;
+        localStorage.setItem("token", token);
+        self.triggerPositive("Correo Y password correctos");
+        self.$router.push({ path: "/principal" });
+        // this.$router.push({ name: "home" });
+      } catch (error) {
+        self.triggerNegative("Usuario o contraseña incorrectos");
+        console.error(error);
+        // Handle login error
+      }
+    },
+    async logout() {
+      try {
+        await this.$axios.post("/api/logout");
+        localStorage.removeItem("token"); // Elimina el token del almacenamiento
+        this.$router.push({ name: "login" }); // Redirige a la página de login
+      } catch (error) {
+        console.error(error);
+        // Manejar error de logout
+      }
     },
     triggerPositive(message) {
       this.$q.notify({
