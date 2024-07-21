@@ -821,12 +821,12 @@ export default {
       self.form.saldo = data.valor;
       self.form.saldo_actual = data.valor;
 
-      //Aqui devolver al stock
+      //Aqui devolver al stock, pero debo verificar si tiene un pedido guardado o una venta y solo la diferencia se debe devolbver
 
       if (self.form.productos.length > 0) {
         this.$axios
           .post(`api/devolver-cantidad-productos`, {
-            productos: self.form.productos,
+            ...self.form,
           })
           .then(({ data }) => {
             self.form.productos = [];
@@ -837,6 +837,7 @@ export default {
             self.form.iva = 0.0;
 
             self.modalSearchClient = false;
+            self.getSavedOrders();
           })
           .catch((error) => {
             if (error.response && error.response.data) {
@@ -1014,28 +1015,14 @@ export default {
         .catch((error) => {
           if (error.response && error.response.data) {
             //Devuelvo todos los productos
+            // Esto debo cabiar porque solo si tiene el ID comienzo a devolevr
             if (error.response.status === 409) {
-              self.$axios
-                .post(`api/devolver-cantidad-productos`, {
-                  productos: self.form.productos,
-                })
-                .then(({ data }) => {
-                  self.form.productos = [];
-                  self.form.descuento = 0.0;
-                  self.form.subtotal_iva = 0.0;
-                  self.form.subtotal = 0.0;
-                  self.form.total = 0.0;
-                  self.form.iva = 0.0;
-
-                  self.modalSearchClient = false;
-                })
-                .catch((error) => {
-                  if (error.response && error.response.data) {
-                    self.triggerNegative(`${error.response.data.message}`);
-                  } else {
-                    self.triggerNegative("Ocurrió un error inesperado.");
-                  }
-                });
+              self.form.productos = [];
+              self.form.descuento = 0.0;
+              self.form.subtotal_iva = 0.0;
+              self.form.subtotal = 0.0;
+              self.form.total = 0.0;
+              self.form.iva = 0.0;
               self.triggerNegative(`${error.response.data.message}`);
             }
           } else {
@@ -1060,28 +1047,17 @@ export default {
             .catch((error) => {
               if (error.response && error.response.data) {
                 //Devuelvo todos los productos
-                if (error.response.status === 409) {
-                  self.$axios
-                    .post(`api/devolver-cantidad-productos`, {
-                      productos: self.form.productos,
-                    })
-                    .then(({ data }) => {
-                      self.form.productos = [];
-                      self.form.descuento = 0.0;
-                      self.form.subtotal_iva = 0.0;
-                      self.form.subtotal = 0.0;
-                      self.form.total = 0.0;
-                      self.form.iva = 0.0;
 
-                      self.modalSearchClient = false;
-                    })
-                    .catch((error) => {
-                      if (error.response && error.response.data) {
-                        self.triggerNegative(`${error.response.data.message}`);
-                      } else {
-                        self.triggerNegative("Ocurrió un error inesperado.");
-                      }
-                    });
+                //Debe Cambiar porque si tiene el id, debo devolver la diferencia de los productos que no esten
+                if (error.response.status === 409) {
+                  self.form.productos = [];
+                  self.form.descuento = 0.0;
+                  self.form.subtotal_iva = 0.0;
+                  self.form.subtotal = 0.0;
+                  self.form.total = 0.0;
+                  self.form.iva = 0.0;
+
+                  self.modalSearchClient = false;
                   self.triggerNegative(`${error.response.data.message}`);
                 }
               } else {
@@ -1102,27 +1078,15 @@ export default {
               if (error.response && error.response.data) {
                 //Devuelvo todos los productos
                 if (error.response.status === 409) {
-                  self.$axios
-                    .post(`api/devolver-cantidad-productos`, {
-                      productos: self.form.productos,
-                    })
-                    .then(({ data }) => {
-                      self.form.productos = [];
-                      self.form.descuento = 0.0;
-                      self.form.subtotal_iva = 0.0;
-                      self.form.subtotal = 0.0;
-                      self.form.total = 0.0;
-                      self.form.iva = 0.0;
+                  self.form.productos = [];
+                  self.form.descuento = 0.0;
+                  self.form.subtotal_iva = 0.0;
+                  self.form.subtotal = 0.0;
+                  self.form.total = 0.0;
+                  self.form.iva = 0.0;
 
-                      self.modalSearchClient = false;
-                    })
-                    .catch((error) => {
-                      if (error.response && error.response.data) {
-                        self.triggerNegative(`${error.response.data.message}`);
-                      } else {
-                        self.triggerNegative("Ocurrió un error inesperado.");
-                      }
-                    });
+                  self.modalSearchClient = false;
+
                   self.triggerNegative(`${error.response.data.message}`);
                 }
               } else {
