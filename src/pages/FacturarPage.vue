@@ -369,7 +369,7 @@
     </q-dialog>
 
     <q-dialog v-model="cardFlag">
-      <q-card class="my-card">
+      <q-card class="my-card" style="width: 250px">
         <q-img v-if="product.img && product.img != ''" :src="product.img" />
         <q-img v-else src="src/assets/images/no-image.png" />
         <q-card-section>

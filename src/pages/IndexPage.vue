@@ -1,6 +1,6 @@
 <template>
   <q-page class="q-pa-md">
-    <span class="text-h3">Usuario: Marco Cardenas</span>
+    <span class="text-h3"></span>
     <q-separator spaced />
     <div class="row justify-center">
       <div class="col-md-12">
