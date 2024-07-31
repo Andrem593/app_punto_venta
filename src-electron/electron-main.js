@@ -11,20 +11,24 @@ let mainWindow;
 let db;
 
 ipcMain.on("print-receipt", (event, receiptContent) => {
-  const printWindow = new BrowserWindow({
-    width: 300, // Ancho de 80 mm (80 mm ≈ 300 px a 96 DPI)
-    height: 600, // Altura ajustable según el contenido
-    show: false,
-  });
+  const printWindow = new BrowserWindow();
 
   printWindow.loadURL(
     `data:text/html;charset=utf-8,${encodeURI(receiptContent)}`
   );
   printWindow.webContents.on("did-finish-load", () => {
-    printWindow.webContents.print({ silent: true }, (success, errorType) => {
-      if (!success) console.log(errorType);
-      printWindow.close();
-    });
+    printWindow.webContents.print(
+      {
+        silent: true,
+        margins: {
+          marginType: "none", // Sin márgenes para utilizar toda el área de impresión
+        },
+      },
+      (success, errorType) => {
+        if (!success) console.log(errorType);
+        printWindow.close();
+      }
+    );
   });
 });
 
@@ -46,6 +50,8 @@ function createWindow() {
 
   mainWindow.loadURL(process.env.APP_URL);
 
+  mainWindow.maximize();
+  
   if (process.env.DEBUGGING) {
     // if on DEV or Production with debug enabled
     mainWindow.webContents.openDevTools();

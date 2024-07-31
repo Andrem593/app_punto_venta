@@ -930,14 +930,14 @@ export default {
       var detalle = data.productos.map((producto) => {
         return `<tr><td>${producto.nombre}</td>
               <td>${producto.cantidad}</td>
-              <td>${producto.precio}</td>
-              <td>${producto.total}</td>
+              <td>$${producto.precio}</td>
+              <td>$${producto.total}</td>
              </tr>`
       });
       var detalleHTML = detalle.join('').toString();
       var html = `
-        <div style="text-align: center;">
-          <h2>Recibo de Venta</h2>
+        <div>
+          <h2>Recibo de Entrega</h2>
           <p>Cliente: ${data.nombre_completo}</p>
           <p>Saldo Actual: ${data.saldo}</p>
           <p>Fecha: ${new Date().toLocaleString()}</p>
@@ -954,9 +954,9 @@ export default {
               ${detalleHTML}
             </tbody>
           </table>
-          <p>Subtotal: ${data.total}</p>
+          <p>Subtotal:$ ${data.total}</p>
           <p>IVA: 0</p>
-          <p>Total: ${data.total}</p>
+          <p>Total:$ ${data.total}</p>
         </div>
       `;
 
