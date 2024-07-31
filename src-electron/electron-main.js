@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, ipcMain } from "electron";
 import path from "path";
 import os from "os";
 
@@ -9,6 +9,24 @@ const platform = process.platform || os.platform();
 
 let mainWindow;
 let db;
+
+ipcMain.on("print-receipt", (event, receiptContent) => {
+  const printWindow = new BrowserWindow({
+    width: 300, // Ancho de 80 mm (80 mm ≈ 300 px a 96 DPI)
+    height: 600, // Altura ajustable según el contenido
+    show: false,
+  });
+
+  printWindow.loadURL(
+    `data:text/html;charset=utf-8,${encodeURI(receiptContent)}`
+  );
+  printWindow.webContents.on("did-finish-load", () => {
+    printWindow.webContents.print({ silent: true }, (success, errorType) => {
+      if (!success) console.log(errorType);
+      printWindow.close();
+    });
+  });
+});
 
 function createWindow() {
   /**

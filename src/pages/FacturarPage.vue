@@ -10,58 +10,27 @@
           </template>
         </q-input>
         <q-separator spaced />
-        <q-btn-toggle
-          v-model="secondModel"
-          spread
-          class="my-custom-toggle"
-          no-caps
-          unelevated
-          toggle-color="primary"
-          color="white"
-          size="15px"
-          text-color="primary"
-          :options="[
+        <q-btn-toggle v-model="secondModel" spread class="my-custom-toggle" no-caps unelevated toggle-color="primary"
+          color="white" size="15px" text-color="primary" :options="[
             { label: 'CATEGORIAS', value: 'one' },
             { label: 'PRODUCTOS', value: 'two' },
-          ]"
-        />
+          ]" />
         <q-separator spaced />
 
         <div style="max-height: 60vh" class="scroll">
           <div class="q-pa-md row justify-center q-gutter-md">
-            <q-card
-              style="width: 100px"
-              class="my-card"
-              flat
-              bordered
-              v-for="(data, index) in products"
-              :key="index"
-            >
-              <q-img
-                v-if="data.img && data.img != ''"
-                :src="data.img"
-                class="my-img"
-                style="width: 100px; height: 100px"
-              />
-              <q-img
-                v-else
-                src="src/assets/images/no-image.png"
-                class="my-img"
-                style="width: 100px; height: 100px"
-              />
+            <q-card style="width: 100px" class="my-card" flat bordered v-for="(data, index) in products" :key="index">
+              <q-img v-if="data.img && data.img != ''" :src="data.img" class="my-img"
+                style="width: 100px; height: 100px" />
+              <q-img v-else src="src/assets/images/no-image.png" class="my-img" style="width: 100px; height: 100px" />
 
               <q-card-section>
                 <div class="row no-wrap items-center">
                   <div class="col ellipsis">{{ data.nombre }}</div>
                 </div>
                 <div class="row justify-center">
-                  <q-btn
-                    :disable="form.cliente_id == ''"
-                    flat
-                    style="font-size: 10px"
-                    color="primary"
-                    @click="getProductInformation(data)"
-                  >
+                  <q-btn :disable="form.cliente_id == ''" flat style="font-size: 10px" color="primary"
+                    @click="getProductInformation(data)">
                     Agregar
                   </q-btn>
                 </div>
@@ -82,12 +51,7 @@
                   <div class="text-subtitle2">{{ form.cedula }}</div>
                 </div>
                 <div class="col-auto">
-                  <q-btn
-                    @click="modalSearchClient = true"
-                    color="secondary"
-                    icon="search"
-                    icon-right="person"
-                  />
+                  <q-btn @click="modalSearchClient = true" color="secondary" icon="search" icon-right="person" />
                 </div>
               </q-card-section>
               <q-separator />
@@ -134,18 +98,8 @@
 
               <q-card-section class="q-pa-sm">
                 <div style="width: 100%; height: 300px; overflow: auto">
-                  <q-table
-                    flat
-                    bordered
-                    :rows="form.productos"
-                    :columns="columns1"
-                    row-key="id"
-                    virtual-scroll
-                    v-model:pagination="pagination"
-                    :rows-per-page-options="[]"
-                    hide-bottom
-                    class="custom-table"
-                  >
+                  <q-table flat bordered :rows="form.productos" :columns="columns1" row-key="id" virtual-scroll
+                    v-model:pagination="pagination" :rows-per-page-options="[]" hide-bottom class="custom-table">
                     <template v-slot:body-cell-precio="props">
                       <q-td :props="props">
                         ${{ props.row.precio }}
@@ -177,12 +131,7 @@
 
                     <template v-slot:body-cell-acciones="props">
                       <q-td :props="props">
-                        <q-btn
-                          color="negative"
-                          icon="delete"
-                          @click="deleteProduct(props.row, props.rowIndex)"
-                          dense
-                        />
+                        <q-btn color="negative" icon="delete" @click="deleteProduct(props.row, props.rowIndex)" dense />
                       </q-td>
                     </template>
                   </q-table>
@@ -217,9 +166,7 @@
                 <div class="row items-center" style="width: 100%">
                   <q-item-label class="col text-start">Subtotal:</q-item-label>
                   <div class="col-auto row justify-end">
-                    <q-item-label class="col text-start"
-                      >${{ form.subtotal }}</q-item-label
-                    >
+                    <q-item-label class="col text-start">${{ form.subtotal }}</q-item-label>
                   </div>
                 </div>
               </q-card-actions>
@@ -227,9 +174,7 @@
                 <div class="row items-center" style="width: 100%">
                   <q-item-label class="col text-start">IVA:</q-item-label>
                   <div class="col-auto row justify-end">
-                    <q-item-label class="col text-start"
-                      >${{ form.iva }}</q-item-label
-                    >
+                    <q-item-label class="col text-start">${{ form.iva }}</q-item-label>
                   </div>
                 </div>
               </q-card-actions>
@@ -239,13 +184,10 @@
 
         <div class="q-mt-md q-mx-md q-pa-md" style="background: #1976d2">
           <div class="row items-center" style="width: 100%">
-            <q-item-label class="col text-start" style="color: white"
-              ><strong>TOTAL</strong></q-item-label
-            >
+            <q-item-label class="col text-start" style="color: white"><strong>TOTAL</strong></q-item-label>
             <div class="col-auto row justify-end">
-              <q-item-label class="col text-start" style="color: white"
-                ><strong>${{ form.total }}</strong></q-item-label
-              >
+              <q-item-label class="col text-start" style="color: white"><strong>${{ form.total
+                  }}</strong></q-item-label>
             </div>
           </div>
         </div>
@@ -253,19 +195,9 @@
 
       <div class="col-md-12">
         <q-btn-group spread>
-          <q-btn
-            style="background-color: #00cfff; color: white; font-size: 20px"
-            label="GUARDAR"
-            @click="save"
-            icon="save"
-          />
-          <q-btn
-            @click="saveSale"
-            color="green"
-            label="PAGAR"
-            style="font-size: 20px"
-            icon="money"
-          />
+          <q-btn style="background-color: #00cfff; color: white; font-size: 20px" label="GUARDAR" @click="save"
+            icon="save" />
+          <q-btn @click="saveSale" color="green" label="PAGAR" style="font-size: 20px" icon="money" />
         </q-btn-group>
       </div>
     </div>
@@ -274,31 +206,18 @@
       <q-card style="width: 700px; max-width: 80vw">
         <q-toolbar>
           <q-avatar>
-            <img
-              src="https://contifico.com/wp-content/uploads/2020/06/isotipo-contifico-1.png"
-            />
+            <img src="https://contifico.com/wp-content/uploads/2020/06/isotipo-contifico-1.png" />
           </q-avatar>
 
-          <q-toolbar-title class="text-center"
-            >Listado de Pedidos Guardados</q-toolbar-title
-          >
+          <q-toolbar-title class="text-center">Listado de Pedidos Guardados</q-toolbar-title>
 
           <q-btn flat round dense icon="close" v-close-popup />
         </q-toolbar>
         <q-card-section class="q-pa-sm">
           <div style="width: 100%; height: 300px; overflow: auto">
-            <q-table
-              flat
-              bordered
-              :rows="pedidos_guardados"
-              :columns="pedidos_guardados_cabecera"
-              row-key="id"
-              virtual-scroll
-              v-model:pagination="pagination"
-              :rows-per-page-options="[]"
-              hide-bottom
-              class="custom-table"
-            >
+            <q-table flat bordered :rows="pedidos_guardados" :columns="pedidos_guardados_cabecera" row-key="id"
+              virtual-scroll v-model:pagination="pagination" :rows-per-page-options="[]" hide-bottom
+              class="custom-table">
               <template v-slot:body-cell-precio="props">
                 <q-td :props="props"> ${{ props.row.precio }} </q-td>
               </template>
@@ -307,18 +226,8 @@
               </template>
               <template v-slot:body-cell-acciones="props">
                 <q-td :props="props">
-                  <q-btn
-                    color="primary"
-                    icon="restore"
-                    @click="recoverOrder(props.row, props.rowIndex)"
-                    dense
-                  />
-                  <q-btn
-                    color="negative"
-                    icon="delete"
-                    @click="deleteOrder(props.row, props.rowIndex)"
-                    dense
-                  />
+                  <q-btn color="primary" icon="restore" @click="recoverOrder(props.row, props.rowIndex)" dense />
+                  <q-btn color="negative" icon="delete" @click="deleteOrder(props.row, props.rowIndex)" dense />
                 </q-td>
               </template>
             </q-table>
@@ -331,21 +240,16 @@
       <q-card style="width: 700px; max-width: 80vw">
         <q-toolbar>
           <q-avatar>
-            <img
-              src="https://contifico.com/wp-content/uploads/2020/06/isotipo-contifico-1.png"
-            />
+            <img src="https://contifico.com/wp-content/uploads/2020/06/isotipo-contifico-1.png" />
           </q-avatar>
 
-          <q-toolbar-title class="text-center"
-            >Listado de Personas</q-toolbar-title
-          >
+          <q-toolbar-title class="text-center">Listado de Personas</q-toolbar-title>
 
           <q-btn flat round dense icon="close" v-close-popup />
         </q-toolbar>
 
         <q-card-section>
-          <q-input v-model="searchClient" label="Cliente"
-            ><template v-slot:prepend>
+          <q-input v-model="searchClient" label="Cliente"><template v-slot:prepend>
               <q-icon name="searchss" />
             </template>
           </q-input>
@@ -384,32 +288,18 @@
               Stock: {{ product.stock }}
             </div>
           </div>
-          <q-input
-            type="number"
-            v-model="product.cantidad"
-            :max="product.stock"
-            :min="1"
-            label="Cantidad"
-            outlined
-            class="q-mt-sm"
-            lazy-rules
-            :rules="[
+          <q-input type="number" v-model="product.cantidad" :max="product.stock" :min="1" label="Cantidad" outlined
+            class="q-mt-sm" lazy-rules :rules="[
               (val) =>
                 (val > 0 && val <= product.stock) ||
                 'La cantidad debe estar dentro del rango',
-            ]"
-          />
+            ]" />
         </q-card-section>
 
         <q-separator />
 
         <q-card-actions align="right">
-          <q-btn
-            flat
-            color="primary"
-            @click="addProducts(product)"
-            label="Añadir"
-          />
+          <q-btn flat color="primary" @click="addProducts(product)" label="Añadir" />
           <q-btn v-close-popup flat color="primary" label="Cancelar" />
         </q-card-actions>
       </q-card>
@@ -418,6 +308,7 @@
 </template>
 
 <script>
+const { ipcRenderer } = require('electron');
 export default {
   name: "facturarPage",
   data() {
@@ -1010,7 +901,12 @@ export default {
           self.getProducts();
           self.getSavedOrders();
           self.triggerPositive("Venta Guardada");
+          // Generar el recibo y enviarlo a la impresora
+          const receiptContent = self.generateReceipt(self.form);
+          self.printReceipt(receiptContent);
+
           self.clearForm();
+
         })
         .catch((error) => {
           if (error.response && error.response.data) {
@@ -1029,6 +925,42 @@ export default {
             self.triggerNegative("Ocurrió un error inesperado.");
           }
         });
+    },
+    generateReceipt(data) {
+      var detalle = data.productos.map((producto) => {
+        return `<tr><td>${producto.nombre}</td>
+              <td>${producto.cantidad}</td>
+              <td>${producto.precio}</td>
+              <td>${producto.total}</td>
+             </tr>`
+      });
+      var detalleHTML = detalle.join('').toString();
+      var html = `
+        <div style="text-align: center;">
+          <h2>Recibo de Venta</h2>
+          <p>Cliente: ${data.nombre_completo}</p>
+          <p>Saldo Actual: ${data.saldo}</p>
+          <p>Fecha: ${new Date().toLocaleString()}</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th>Cantidad</th>
+                <th>Precio</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${detalleHTML}
+            </tbody>
+          </table>
+          <p>Subtotal: ${data.total}</p>
+          <p>IVA: 0</p>
+          <p>Total: ${data.total}</p>
+        </div>
+      `;
+
+      return html;
     },
     save() {
       let self = this;
@@ -1098,6 +1030,11 @@ export default {
         self.triggerNegative("Debe tener añadido por lo mínimo un producto");
       }
     },
+    printReceipt(receiptContent) {
+      ipcRenderer.send('print-receipt', receiptContent);
+      console.log('terminado');
+
+    }
   },
   created() {
     this.getClients();
@@ -1113,49 +1050,57 @@ export default {
     //   });
     // }
   },
-  mounted() {},
+  mounted() { },
 };
 </script>
 
 <style scoped>
 .custom-font p {
-  font-size: 16px; /* Ajusta el tamaño de letra según tus necesidades */
-  white-space: normal; /* Permite que el texto se ajuste automáticamente */
-  overflow: hidden; /* Oculta el exceso de texto */
-  text-overflow: ellipsis; /* Agrega puntos suspensivos al final del texto que se desborda */
+  font-size: 16px;
+  /* Ajusta el tamaño de letra según tus necesidades */
+  white-space: normal;
+  /* Permite que el texto se ajuste automáticamente */
+  overflow: hidden;
+  /* Oculta el exceso de texto */
+  text-overflow: ellipsis;
+  /* Agrega puntos suspensivos al final del texto que se desborda */
 }
+
 .my-img {
-  width: 100%; /* Tamaño completo de la imagen dentro de la tarjeta */
-  height: 120px; /* Altura específica para la imagen (ajustar según necesidades) */
-  object-fit: cover; /* Ajuste para cubrir completamente el espacio asignado */
+  width: 100%;
+  /* Tamaño completo de la imagen dentro de la tarjeta */
+  height: 120px;
+  /* Altura específica para la imagen (ajustar según necesidades) */
+  object-fit: cover;
+  /* Ajuste para cubrir completamente el espacio asignado */
 }
+
 .my-card-2 {
   width: 200;
-  max-width: calc(100% / 6 - 20px); /* Ancho máximo de cada tarjeta */
-  margin: 10px; /* Margen entre tarjetas */
+  max-width: calc(100% / 6 - 20px);
+  /* Ancho máximo de cada tarjeta */
+  margin: 10px;
+  /* Margen entre tarjetas */
 }
 
 @media (max-width: 1560px) {
   .my-card-2 {
-    max-width: calc(
-      100% / 4 - 20px
-    ); /* Reducir el ancho máximo para pantallas más pequeñas */
+    max-width: calc(100% / 4 - 20px);
+    /* Reducir el ancho máximo para pantallas más pequeñas */
   }
 }
 
 @media (max-width: 960px) {
   .my-card-2 {
-    max-width: calc(
-      100% / 2 - 20px
-    ); /* Reducir el ancho máximo para pantallas más pequeñas */
+    max-width: calc(100% / 2 - 20px);
+    /* Reducir el ancho máximo para pantallas más pequeñas */
   }
 }
 
 @media (max-width: 600px) {
   .my-card-2 {
-    max-width: calc(
-      100% / 1 - 20px
-    ); /* Aún más reducido para pantallas muy pequeñas */
+    max-width: calc(100% / 1 - 20px);
+    /* Aún más reducido para pantallas muy pequeñas */
   }
 }
 

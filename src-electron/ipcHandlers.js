@@ -1,6 +1,6 @@
 // ipcHandlers.js
 const path = require("path");
-const { ipcMain, app } = require("electron");
+const { ipcMain, app, BrowserWindow } = require("electron");
 const knex = require("knex");
 
 let db;
@@ -54,7 +54,22 @@ function registerHandlers() {
   });
 }
 
+function printReceipt() {
+  console.log("Printing receipt...");
+  const printWindow = new BrowserWindow({ show: false });
+  printWindow.loadURL(
+    `data:text/html;charset=utf-8,${encodeURI(receiptContent)}`
+  );
+  printWindow.webContents.on("did-finish-load", () => {
+    printWindow.webContents.print({ silent: true }, (success, errorType) => {
+      if (!success) console.log(errorType);
+      printWindow.close();
+    });
+  });
+}
+
 module.exports = {
   initializeDatabase,
   registerHandlers,
+  printReceipt,
 };
