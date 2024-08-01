@@ -46,27 +46,6 @@
             />
           </div>
         </q-form>
-
-        <!-- <q-btn
-          label="clinets"
-          @click="getClients"
-          color="primary"
-          class="full-width"
-        />
-
-        <q-btn
-          label="Salir"
-          @click="logout"
-          color="primary"
-          class="full-width" -->
-        <!-- /> -->
-
-        <!-- <h2>Listado de Usuarios</h2>
-        <ul>
-          <li v-for="user in users" :key="user.id">
-            {{ user.name }} - {{ user.email }}
-          </li>
-        </ul> -->
       </div>
     </q-card>
   </q-page>
@@ -79,8 +58,8 @@ export default {
   data() {
     return {
       form: {
-        email: "marco.cardenas1702@gmail.com",
-        password: "admin",
+        email: "",
+        password: "",
       },
       users: [],
     };
