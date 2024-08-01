@@ -2,7 +2,7 @@ import { boot } from "quasar/wrappers";
 import axios from "axios";
 
 const axiosInstance = axios.create({
-  baseURL: "http://127.0.0.1:8000", // URL de tu API
+  baseURL: "https://solmarket.store/", // URL de tu API
 });
 
 axiosInstance.defaults.withCredentials = true;
