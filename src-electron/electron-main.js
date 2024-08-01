@@ -2,7 +2,11 @@ import { app, BrowserWindow, ipcMain } from "electron";
 import path from "path";
 import os from "os";
 
-const { initializeDatabase, registerHandlers } = require("./ipcHandlers");
+const {
+  initializeDatabase,
+  registerHandlers,
+  replicateClientes,
+} = require("./ipcHandlers");
 
 // needed in case process is undefined under Linux
 const platform = process.platform || os.platform();
@@ -51,7 +55,7 @@ function createWindow() {
   mainWindow.loadURL(process.env.APP_URL);
 
   mainWindow.maximize();
-  
+
   if (process.env.DEBUGGING) {
     // if on DEV or Production with debug enabled
     mainWindow.webContents.openDevTools();
@@ -71,6 +75,7 @@ app.whenReady().then(async () => {
   initializeDatabase();
   registerHandlers();
   createWindow();
+  replicateClientes();
 });
 
 app.on("window-all-closed", () => {

@@ -52,7 +52,7 @@
 </template>
 <script>
 // import { ref } from "vue";
-// const { ipcRenderer } = require("electron");
+const { ipcRenderer } = require("electron");
 
 export default {
   data() {
@@ -68,6 +68,9 @@ export default {
     // this.getUsers();
   },
   methods: {
+    async prueba() {
+      // const users = await ipcRenderer.replicateClientes();
+    },
     // async getUsers() {
     //   try {
     //     const users = await ipcRenderer.invoke("get-users");
@@ -93,6 +96,15 @@ export default {
     // },
     async login() {
       let self = this;
+      self.prueba();
+
+      let online = navigator.onLine;
+
+      if (online) {
+        self.triggerPositive("En linea");
+      } else {
+        self.triggerNegative("NO tiene internet");
+      }
       console.log(self.form);
 
       try {
@@ -105,13 +117,11 @@ export default {
         localStorage.setItem("token", token);
         self.triggerPositive("Correo Y password correctos");
         self.$router.push({ path: "/principal" });
-        // this.$router.push({ name: "home" });
       } catch (error) {
         self.triggerNegative("Usuario o contraseña incorrectos");
-        console.error(error);
-        // Handle login error
       }
     },
+
     async logout() {
       try {
         await this.$axios.post("/api/logout");
