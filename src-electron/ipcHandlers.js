@@ -2,39 +2,34 @@
 const path = require("path");
 const { ipcMain, app, BrowserWindow } = require("electron");
 const knex = require("knex");
-
-let db;
+const productController = require("./controllers/productoController");
+const clientesController = require("./controllers/clientesController");
+const { db, cloudDb } = require("./connections/db");
 
 // Inicializar la base de datos
 function initializeDatabase() {
-  const dbPath = path.join(app.getPath("userData"), "database.sqlite");
-
-  cloudDB = knex({
-    client: "pg", // o el cliente que estés usando
-    connection: {
-      host: "svp-database.coch3tw5gsdu.us-east-2.rds.amazonaws.com",
-      user: "postgres",
-      password: "Ecu12345",
-      database: "SVTECHNOLOGY_PRUEBAS",
-    },
-    searchPath: ["rrhh"],
-  });
-
-  db = knex({
-    client: "sqlite3",
-    connection: {
-      filename: dbPath,
-    },
-    useNullAsDefault: true,
-  });
   // Crear tabla de usuarios si no existe
   db.schema.hasTable("users").then((exists) => {
     if (!exists) {
       return db.schema.createTable("users", (table) => {
-        table.increments("id").primary();
-        table.string("name");
-        table.string("email");
-        table.string("password");
+        table.bigIncrements("id").unsigned().notNullable(); // BIGINT UNSIGNED AUTO_INCREMENT
+        table.string("name", 255).notNullable().collate("utf8mb4_unicode_ci"); // VARCHAR(255) NOT NULL
+        table
+          .string("email", 255)
+          .notNullable()
+          .unique()
+          .collate("utf8mb4_unicode_ci"); // VARCHAR(255) NOT NULL UNIQUE
+        table.timestamp("email_verified_at").nullable().defaultTo(null); // TIMESTAMP NULL DEFAULT NULL
+        table
+          .string("password", 255)
+          .notNullable()
+          .collate("utf8mb4_unicode_ci"); // VARCHAR(255) NOT NULL
+        table
+          .string("remember_token", 100)
+          .nullable()
+          .defaultTo(null)
+          .collate("utf8mb4_unicode_ci"); // VARCHAR(100) NULL DEFAULT NULL
+        table.timestamps(true, true); // TIMESTAMP NULL DEFAULT NULL for created_at and updated_at
       });
     }
   });
@@ -59,10 +54,21 @@ function initializeDatabase() {
         table.float("valor");
         table.integer("estado").defaultTo(1);
         table.timestamps(true, true); // Agrega created_at y updated_at con valores por defecto
-        table.timestamp("deleted_at"); // Agrega deleted_at
+        table.timestamp("deleted_at").nullable(); // Agrega deleted_at
       });
     }
   });
+
+  db.schema.hasTable("clientes").then((exists) => {
+    if (exists) {
+      return db.schema.alterTable("clientes", function (table) {
+        table.timestamp("created_at").nullable().alter(); // Permitir nulos en 'created_at'
+        table.timestamp("updated_at").nullable().alter(); // Permitir nulos en 'updated_at'
+        table.timestamp("deleted_at").nullable().alter(); // Permitir nulos en 'deleted_at'
+      });
+    }
+  });
+
   db.schema.hasTable("productos").then((exists) => {
     if (!exists) {
       return db.schema.createTable("productos", (table) => {
@@ -175,48 +181,6 @@ function initializeDatabase() {
   });
 }
 
-async function replicateClientes() {
-  try {
-    // Obtener todos los registros de la tabla 'clientes' de la base de datos en la nube
-    const clientes = await cloudDB.select("*").from("rrhh.pruebas");
-    console.log("ss");
-
-    // Insertar o actualizar registros en la base de datos local
-    for (const cliente of clientes) {
-      const { id, nombre, edad, ...otherFields } = cliente;
-
-      // Verificar si el cliente ya existe en la base de datos local
-      const existingCliente = await localDB("pruebas").where("id", id).first();
-
-      if (existingCliente) {
-        // Actualizar cliente existente
-        await localDB("pruebas")
-          .where("id", id)
-          .update({
-            nombre,
-            edad,
-            ...otherFields,
-          });
-      } else {
-        // Insertar nuevo cliente
-        await localDB("pruebas").insert({
-          id,
-          nombre,
-          edad,
-          ...otherFields,
-        });
-      }
-    }
-    console.log("Replication complete.");
-  } catch (error) {
-    console.error("Error replicating data:", error);
-  } finally {
-    // Cerrar las conexiones de base de datos
-    await cloudDB.destroy();
-    await localDB.destroy();
-  }
-}
-
 // console.log("aahh");
 
 // replicateClientes();
@@ -244,6 +208,55 @@ function registerHandlers() {
       return { success: false, error: err.message };
     }
   });
+
+  ///Productos
+  ipcMain.handle("get-products", async (event, args) => {
+    try {
+      return await productController.getProducts(args);
+    } catch (err) {
+      console.error("Error al obtener usuarios:", err);
+      return [];
+    }
+  });
+
+  ipcMain.handle("producto", async (event, args) => {
+    try {
+      return await productController.show(args);
+    } catch (err) {
+      console.error("Error al obtener usuarios:", err);
+      return [];
+    }
+  });
+
+  ipcMain.handle("cambio-stock-producto", async (event, args) => {
+    try {
+      return await productController.changeProductStockValue(
+        args.id,
+        args.cantidad,
+        args.type
+      );
+    } catch (err) {
+      console.error("Error al obtener usuarios:", err);
+      return [];
+    }
+  });
+
+  //Clientes
+
+  ipcMain.handle("get-customers", async (event, args) => {
+    try {
+      return await clientesController.getCustomers(args);
+    } catch (err) {
+      console.error("Error al obtener usuarios:", err);
+      return [];
+    }
+  });
+
+  // ipcMain.handle("replicate-data", async () => {
+  //   console.log("replicado");
+  //   // await replicateData();
+  //   return "Replication complete";
+  // });
 }
 
 function printReceipt() {
@@ -260,9 +273,100 @@ function printReceipt() {
   });
 }
 
+async function fetchCloudData(element) {
+  try {
+    const data = await cloudDb.select("*").from(element);
+    return data;
+  } catch (error) {
+    console.error("Error fetching cloud data:", error);
+  }
+}
+
+async function insertLocalData(data, table) {
+  try {
+    // console.log(data);
+    for (let index = 0; index < data.length; index++) {
+      let element = data[index];
+      await fetchFilteredCloudData(element, table);
+      // console.log(element.);
+    }
+
+    // await db("productos").insert(data);
+  } catch (error) {
+    console.error("Error inserting local data:", error);
+  }
+}
+
+async function fetchFilteredCloudData(element, table) {
+  try {
+    // console.log(element);
+    let data = await db
+      .select("*")
+      .from(table)
+      .where("id", element.id) // condición where
+      // .andWhere("status", "active") // otra condición where
+      // .andWhere("price", ">", 100) // otra condición where con operador
+      // .andWhere("name", "like", "%phone%") // condición like
+      .limit(1); // límite de registros
+
+    if (table == "productos") {
+      element.stock = Math.floor(element.stock * 0.1);
+    }
+
+    if (data.length > 0) {
+      let result = data[0];
+      // console.log(result);
+      await db(table)
+        .where("id", element.id) // Condición para seleccionar el registro a actualizar
+        .update({ ...element });
+      // .update({
+      //   nombre: element.nombre, // Actualiza el campo 'name'
+      //   descripcion: element.descripcion, // Actualiza el campo 'name'
+      //   img: element.img, // Actualiza el campo 'name'
+      //   precio: element.precio, // Actualiza el campo 'price'
+      //   stock: element.stock, // Actualiza el campo 'status'
+      //   estado: element.estado, // Actualiza el campo 'status'
+      // });
+    } else {
+      await db(table).insert(element);
+    }
+
+    // console.log(data);
+
+    // return data;
+  } catch (error) {
+    console.error("Error fetching cloud data:", error);
+  }
+}
+
+async function replicateData() {
+  //Replicacion de maestros
+  let tables = ["users", "clientes", "productos"];
+
+  for (let index = 0; index < tables.length; index++) {
+    let element = tables[index];
+    // console.log(element);
+    let cloudData = await fetchCloudData(element);
+    if (cloudData && cloudData.length > 0) {
+      await insertLocalData(cloudData, element);
+      // console.log("Data replicated successfully");
+    } else {
+      console.log("No data to replicate");
+    }
+  }
+
+  // const cloudData = await fetchCloudData();
+  // if (cloudData && cloudData.length > 0) {
+  //   await insertLocalData(cloudData);
+  //   console.log("Data replicated successfully");
+  // } else {
+  //   console.log("No data to replicate");
+  // }
+}
+
 module.exports = {
   initializeDatabase,
   registerHandlers,
   printReceipt,
-  replicateClientes,
+  replicateData,
 };

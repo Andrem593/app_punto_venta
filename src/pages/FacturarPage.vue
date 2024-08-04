@@ -10,27 +10,47 @@
           </template>
         </q-input>
         <q-separator spaced />
-        <q-btn-toggle v-model="secondModel" spread class="my-custom-toggle" no-caps unelevated toggle-color="primary"
-          color="white" size="15px" text-color="primary" :options="[
-            { label: 'CATEGORIAS', value: 'one' },
-            { label: 'PRODUCTOS', value: 'two' },
-          ]" />
-        <q-separator spaced />
 
         <div style="max-height: 60vh" class="scroll">
           <div class="q-pa-md row justify-center q-gutter-md">
-            <q-card style="width: 100px" class="my-card" flat bordered v-for="(data, index) in products" :key="index">
-              <q-img v-if="data.img && data.img != ''" :src="data.img" class="my-img"
-                style="width: 100px; height: 100px" />
-              <q-img v-else src="src/assets/images/no-image.png" class="my-img" style="width: 100px; height: 100px" />
+            <q-card
+              style="width: 100px"
+              class="my-card"
+              flat
+              bordered
+              v-for="(data, index) in products"
+              :key="index"
+            >
+              <q-img
+                v-if="data.img && data.img != ''"
+                :src="data.img"
+                class="my-img"
+                style="width: 100px; height: 100px"
+              />
+              <q-img
+                v-else
+                src="src/assets/images/no-image.png"
+                class="my-img"
+                style="width: 100px; height: 100px"
+              />
 
-              <q-card-section>
-                <div class="row no-wrap items-center">
-                  <div class="col ellipsis">{{ data.nombre }}</div>
+              <q-card-section class="no-padding-no-margin">
+                <div class="row items-center" style="height: 100%">
+                  <div
+                    class="col text-center text-bold"
+                    style="font-size: 10px"
+                  >
+                    {{ data.nombre }}
+                  </div>
                 </div>
                 <div class="row justify-center">
-                  <q-btn :disable="form.cliente_id == ''" flat style="font-size: 10px" color="primary"
-                    @click="getProductInformation(data)">
+                  <q-btn
+                    :disable="form.cliente_id == ''"
+                    flat
+                    style="font-size: 10px"
+                    color="primary"
+                    @click="getProductInformation(data)"
+                  >
                     Agregar
                   </q-btn>
                 </div>
@@ -51,7 +71,12 @@
                   <div class="text-subtitle2">{{ form.cedula }}</div>
                 </div>
                 <div class="col-auto">
-                  <q-btn @click="modalSearchClient = true" color="secondary" icon="search" icon-right="person" />
+                  <q-btn
+                    @click="openModalClients"
+                    color="secondary"
+                    icon="search"
+                    icon-right="person"
+                  />
                 </div>
               </q-card-section>
               <q-separator />
@@ -98,8 +123,18 @@
 
               <q-card-section class="q-pa-sm">
                 <div style="width: 100%; height: 300px; overflow: auto">
-                  <q-table flat bordered :rows="form.productos" :columns="columns1" row-key="id" virtual-scroll
-                    v-model:pagination="pagination" :rows-per-page-options="[]" hide-bottom class="custom-table">
+                  <q-table
+                    flat
+                    bordered
+                    :rows="form.productos"
+                    :columns="columns1"
+                    row-key="id"
+                    virtual-scroll
+                    v-model:pagination="pagination"
+                    :rows-per-page-options="[]"
+                    hide-bottom
+                    class="custom-table"
+                  >
                     <template v-slot:body-cell-precio="props">
                       <q-td :props="props">
                         ${{ props.row.precio }}
@@ -131,7 +166,12 @@
 
                     <template v-slot:body-cell-acciones="props">
                       <q-td :props="props">
-                        <q-btn color="negative" icon="delete" @click="deleteProduct(props.row, props.rowIndex)" dense />
+                        <q-btn
+                          color="negative"
+                          icon="delete"
+                          @click="deleteProduct(props.row, props.rowIndex)"
+                          dense
+                        />
                       </q-td>
                     </template>
                   </q-table>
@@ -166,7 +206,9 @@
                 <div class="row items-center" style="width: 100%">
                   <q-item-label class="col text-start">Subtotal:</q-item-label>
                   <div class="col-auto row justify-end">
-                    <q-item-label class="col text-start">${{ form.subtotal }}</q-item-label>
+                    <q-item-label class="col text-start"
+                      >${{ form.subtotal }}</q-item-label
+                    >
                   </div>
                 </div>
               </q-card-actions>
@@ -174,7 +216,9 @@
                 <div class="row items-center" style="width: 100%">
                   <q-item-label class="col text-start">IVA:</q-item-label>
                   <div class="col-auto row justify-end">
-                    <q-item-label class="col text-start">${{ form.iva }}</q-item-label>
+                    <q-item-label class="col text-start"
+                      >${{ form.iva }}</q-item-label
+                    >
                   </div>
                 </div>
               </q-card-actions>
@@ -184,10 +228,13 @@
 
         <div class="q-mt-md q-mx-md q-pa-md" style="background: #1976d2">
           <div class="row items-center" style="width: 100%">
-            <q-item-label class="col text-start" style="color: white"><strong>TOTAL</strong></q-item-label>
+            <q-item-label class="col text-start" style="color: white"
+              ><strong>TOTAL</strong></q-item-label
+            >
             <div class="col-auto row justify-end">
-              <q-item-label class="col text-start" style="color: white"><strong>${{ form.total
-                  }}</strong></q-item-label>
+              <q-item-label class="col text-start" style="color: white"
+                ><strong>${{ form.total }}</strong></q-item-label
+              >
             </div>
           </div>
         </div>
@@ -195,9 +242,19 @@
 
       <div class="col-md-12">
         <q-btn-group spread>
-          <q-btn style="background-color: #00cfff; color: white; font-size: 20px" label="GUARDAR" @click="save"
-            icon="save" />
-          <q-btn @click="saveSale" color="green" label="PAGAR" style="font-size: 20px" icon="money" />
+          <q-btn
+            style="background-color: #00cfff; color: white; font-size: 20px"
+            label="GUARDAR"
+            @click="save"
+            icon="save"
+          />
+          <q-btn
+            @click="saveSale"
+            color="green"
+            label="PAGAR"
+            style="font-size: 20px"
+            icon="money"
+          />
         </q-btn-group>
       </div>
     </div>
@@ -206,18 +263,31 @@
       <q-card style="width: 700px; max-width: 80vw">
         <q-toolbar>
           <q-avatar>
-            <img src="https://contifico.com/wp-content/uploads/2020/06/isotipo-contifico-1.png" />
+            <img
+              src="https://contifico.com/wp-content/uploads/2020/06/isotipo-contifico-1.png"
+            />
           </q-avatar>
 
-          <q-toolbar-title class="text-center">Listado de Pedidos Guardados</q-toolbar-title>
+          <q-toolbar-title class="text-center"
+            >Listado de Pedidos Guardados</q-toolbar-title
+          >
 
           <q-btn flat round dense icon="close" v-close-popup />
         </q-toolbar>
         <q-card-section class="q-pa-sm">
           <div style="width: 100%; height: 300px; overflow: auto">
-            <q-table flat bordered :rows="pedidos_guardados" :columns="pedidos_guardados_cabecera" row-key="id"
-              virtual-scroll v-model:pagination="pagination" :rows-per-page-options="[]" hide-bottom
-              class="custom-table">
+            <q-table
+              flat
+              bordered
+              :rows="pedidos_guardados"
+              :columns="pedidos_guardados_cabecera"
+              row-key="id"
+              virtual-scroll
+              v-model:pagination="pagination"
+              :rows-per-page-options="[]"
+              hide-bottom
+              class="custom-table"
+            >
               <template v-slot:body-cell-precio="props">
                 <q-td :props="props"> ${{ props.row.precio }} </q-td>
               </template>
@@ -226,8 +296,18 @@
               </template>
               <template v-slot:body-cell-acciones="props">
                 <q-td :props="props">
-                  <q-btn color="primary" icon="restore" @click="recoverOrder(props.row, props.rowIndex)" dense />
-                  <q-btn color="negative" icon="delete" @click="deleteOrder(props.row, props.rowIndex)" dense />
+                  <q-btn
+                    color="primary"
+                    icon="restore"
+                    @click="recoverOrder(props.row, props.rowIndex)"
+                    dense
+                  />
+                  <q-btn
+                    color="negative"
+                    icon="delete"
+                    @click="deleteOrder(props.row, props.rowIndex)"
+                    dense
+                  />
                 </q-td>
               </template>
             </q-table>
@@ -240,16 +320,21 @@
       <q-card style="width: 700px; max-width: 80vw">
         <q-toolbar>
           <q-avatar>
-            <img src="https://contifico.com/wp-content/uploads/2020/06/isotipo-contifico-1.png" />
+            <img
+              src="https://contifico.com/wp-content/uploads/2020/06/isotipo-contifico-1.png"
+            />
           </q-avatar>
 
-          <q-toolbar-title class="text-center">Listado de Personas</q-toolbar-title>
+          <q-toolbar-title class="text-center"
+            >Listado de Personas</q-toolbar-title
+          >
 
           <q-btn flat round dense icon="close" v-close-popup />
         </q-toolbar>
 
         <q-card-section>
-          <q-input v-model="searchClient" label="Cliente"><template v-slot:prepend>
+          <q-input v-model="searchClient" label="Cliente"
+            ><template v-slot:prepend>
               <q-icon name="searchss" />
             </template>
           </q-input>
@@ -278,7 +363,7 @@
         <q-img v-else src="src/assets/images/no-image.png" />
         <q-card-section>
           <div class="row items-center">
-            <div class="col text-h6 ellipsis text-bold">
+            <div class="col text-h6 text-center text-bold">
               {{ product.nombre }}
             </div>
           </div>
@@ -288,18 +373,32 @@
               Stock: {{ product.stock }}
             </div>
           </div>
-          <q-input type="number" v-model="product.cantidad" :max="product.stock" :min="1" label="Cantidad" outlined
-            class="q-mt-sm" lazy-rules :rules="[
+          <q-input
+            type="number"
+            v-model="product.cantidad"
+            :max="product.stock"
+            :min="1"
+            label="Cantidad"
+            outlined
+            class="q-mt-sm"
+            lazy-rules
+            :rules="[
               (val) =>
                 (val > 0 && val <= product.stock) ||
                 'La cantidad debe estar dentro del rango',
-            ]" />
+            ]"
+          />
         </q-card-section>
 
         <q-separator />
 
         <q-card-actions align="right">
-          <q-btn flat color="primary" @click="addProducts(product)" label="Añadir" />
+          <q-btn
+            flat
+            color="primary"
+            @click="addProducts(product)"
+            label="Añadir"
+          />
           <q-btn v-close-popup flat color="primary" label="Cancelar" />
         </q-card-actions>
       </q-card>
@@ -308,7 +407,7 @@
 </template>
 
 <script>
-const { ipcRenderer } = require('electron');
+const { ipcRenderer } = require("electron");
 export default {
   name: "facturarPage",
   data() {
@@ -437,25 +536,54 @@ export default {
           self.triggerNegative(error);
         });
     },
+    databaseLocalGetProducts(nombre = null) {
+      let self = this;
+      ipcRenderer
+        .invoke("get-products", nombre)
+        .then((data) => {
+          self.products = data;
+        })
+        .catch((error) => {
+          self.triggerNegative(error);
+        });
+    },
     getProducts(nombre = null) {
       let self = this;
       let filtro = "";
       if (nombre != null && nombre.length > 2) {
         filtro = `&nombre=${nombre}`;
       }
-      this.$axios
-        .get(`api/productos?perPage=all${filtro}`)
-        .then(({ data }) => {
-          self.products = data;
-        })
-        .catch(({ error }) => {
-          self.triggerNegative(error);
-        });
+      let online = navigator.onLine;
+      //CAMBIAR
+      if (!online) {
+        this.$axios
+          .get(`api/productos?perPage=all${filtro}`)
+          .then(({ data }) => {
+            self.products = data;
+          })
+          .catch(({ error }) => {
+            self.triggerNegative(error);
+          });
+      } else {
+        self.databaseLocalGetProducts(nombre);
+      }
     },
     openSave() {
       let self = this;
       self.modalGuardadoClient = true;
       self.clearForm();
+      self.getSavedOrders();
+    },
+    dataBaseLocalgetClients(nombres) {
+      let self = this;
+      ipcRenderer
+        .invoke("get-customers", nombres)
+        .then((data) => {
+          self.clientes = data;
+        })
+        .catch((error) => {
+          self.triggerNegative(error);
+        });
     },
     getClients(nombres = null) {
       let self = this;
@@ -463,14 +591,21 @@ export default {
       if (nombres != null && nombres.length > 2) {
         filtro = `&nombres=${nombres}`;
       }
-      this.$axios
-        .get(`api/clientes?perPage=all${filtro}`)
-        .then(({ data }) => {
-          self.clientes = data;
-        })
-        .catch((error) => {
-          self.triggerNegative(error.error);
-        });
+
+      let online = navigator.onLine;
+      //CAMBIAR
+      if (!online) {
+        this.$axios
+          .get(`api/clientes?perPage=all${filtro}`)
+          .then(({ data }) => {
+            self.clientes = data;
+          })
+          .catch((error) => {
+            self.triggerNegative(error.error);
+          });
+      } else {
+        self.dataBaseLocalgetClients(nombres);
+      }
     },
     getAllProducts(value) {
       let self = this;
@@ -478,17 +613,36 @@ export default {
         console.log("Buscar Productos: ", value);
       }
     },
-    getProductInformation(data) {
+    databaseGetProductInformation(data) {
       let self = this;
-      this.$axios
-        .get(`api/producto/${data.id}`)
-        .then(({ data }) => {
+      ipcRenderer
+        .invoke("producto", data.id)
+        .then((data) => {
+          console.log(data, "invoke");
           self.product = { cantidad: 1, ...data };
           self.cardFlag = true;
         })
         .catch((error) => {
-          self.triggerNegative(error.error);
+          self.triggerNegative(error);
         });
+    },
+    getProductInformation(data) {
+      let self = this;
+      let online = navigator.onLine;
+      //CAMBIAR
+      if (!online) {
+        this.$axios
+          .get(`api/producto/${data.id}`)
+          .then(({ data }) => {
+            self.product = { cantidad: 1, ...data };
+            self.cardFlag = true;
+          })
+          .catch((error) => {
+            self.triggerNegative(error.error);
+          });
+      } else {
+        self.databaseGetProductInformation(data);
+      }
     },
     getCustomerData(data) {
       let self = this;
@@ -546,33 +700,15 @@ export default {
         message: message,
       });
     },
-    addProducts(data) {
+    databaseLocalAddProducts(data) {
       let self = this;
-
-      // parseInt(data.cantidad) > 0 &&
-      if (parseInt(data.cantidad) == 0) {
-        self.triggerNegative("La cantidad debe ser mayor a 1");
-        return;
-      }
-      if (parseInt(data.cantidad) > parseInt(data.stock)) {
-        self.triggerNegative("La cantidad debe ser menor o igual al Stock");
-        return;
-      }
-
-      let total = self.form.productos.reduce(
-        (acc, producto) => acc + producto.total,
-        0
-      );
-
-      total += parseFloat(data.cantidad) * data.precio;
-
-      if (total > self.form.saldo_actual) {
-        self.triggerNegative("No tiene suficiente saldo");
-        return;
-      }
-
-      this.$axios
-        .get(`api/cambio-stock-producto/${data.id}/${data.cantidad}/1`)
+      let args = {
+        id: data.id,
+        cantidad: data.cantidad,
+        type: 1,
+      };
+      ipcRenderer
+        .invoke("cambio-stock-producto", args)
         .then((response) => {
           let existingProduct = self.form.productos.find(
             (producto) => producto.producto_id === data.id
@@ -618,15 +754,103 @@ export default {
           };
           self.cardFlag = false;
         })
-        .catch(() => {
-          self.triggerNegative("Ha ocurrido un error al agregar el producto");
+        .catch((error) => {
+          self.triggerNegative(error);
         });
     },
-    deleteProduct(data, indice) {
+    addProducts(data) {
       let self = this;
 
-      this.$axios
-        .get(`api/cambio-stock-producto/${data.producto_id}/${data.cantidad}/2`)
+      // parseInt(data.cantidad) > 0 &&
+      if (parseInt(data.cantidad) == 0) {
+        self.triggerNegative("La cantidad debe ser mayor a 1");
+        return;
+      }
+      if (parseInt(data.cantidad) > parseInt(data.stock)) {
+        self.triggerNegative("La cantidad debe ser menor o igual al Stock");
+        return;
+      }
+
+      let total = self.form.productos.reduce(
+        (acc, producto) => acc + producto.total,
+        0
+      );
+
+      total += parseFloat(data.cantidad) * data.precio;
+
+      if (total > self.form.saldo_actual) {
+        self.triggerNegative("No tiene suficiente saldo");
+        return;
+      }
+
+      let online = navigator.onLine;
+      //CAMBIAR
+      if (!online) {
+        this.$axios
+          .get(`api/cambio-stock-producto/${data.id}/${data.cantidad}/1`)
+          .then((response) => {
+            let existingProduct = self.form.productos.find(
+              (producto) => producto.producto_id === data.id
+            );
+
+            if (existingProduct) {
+              // Si el producto ya existe, actualizar cantidad y total
+              existingProduct.cantidad =
+                parseFloat(existingProduct.cantidad) +
+                parseFloat(data.cantidad); // Sumar la nueva cantidad
+              existingProduct.total =
+                existingProduct.cantidad * existingProduct.precio; // Recalcular el total
+            } else {
+              // Si el producto no existe, agregarlo a la lista
+              self.form.productos.push({
+                producto_id: data.id,
+                nombre: data.nombre,
+                img: data.img,
+                cantidad: data.cantidad,
+                precio: data.precio,
+                total: parseFloat(data.cantidad) * parseFloat(data.precio),
+              });
+            }
+
+            self.form.total = self.form.productos.reduce(
+              (acc, producto) => acc + producto.total,
+              0
+            );
+
+            self.form.total = self.form.total.toFixed(2);
+
+            self.form.saldo =
+              parseFloat(self.form.saldo_actual) - parseFloat(self.form.total);
+
+            self.form.saldo = self.form.saldo.toFixed(2);
+
+            self.product = {
+              id: "",
+              nombre: "",
+              stock: 0,
+              img: "",
+              cantidad: 1,
+              precio: 0,
+            };
+            self.cardFlag = false;
+          })
+          .catch(() => {
+            self.triggerNegative("Ha ocurrido un error al agregar el producto");
+          });
+      } else {
+        self.databaseLocalAddProducts(data);
+      }
+    },
+
+    dataBaseLocalDeleteProduct(data, indice) {
+      let self = this;
+      let args = {
+        id: data.producto_id,
+        cantidad: data.cantidad,
+        type: 2,
+      };
+      ipcRenderer
+        .invoke("cambio-stock-producto", args)
         .then((response) => {
           self.form.productos.splice(indice, 1);
 
@@ -641,9 +865,40 @@ export default {
             parseFloat(self.form.saldo_actual) - parseFloat(self.form.total);
           self.form.saldo = self.form.saldo.toFixed(2);
         })
-        .catch(() => {
-          self.triggerNegative("Ha ocurrido un error al eliminar");
+        .catch((error) => {
+          self.triggerNegative(error);
         });
+    },
+    deleteProduct(data, indice) {
+      let self = this;
+
+      let online = navigator.onLine;
+      //CAMBIAR
+      if (!online) {
+        this.$axios
+          .get(
+            `api/cambio-stock-producto/${data.producto_id}/${data.cantidad}/2`
+          )
+          .then((response) => {
+            self.form.productos.splice(indice, 1);
+
+            self.form.total = self.form.productos.reduce(
+              (acc, producto) => acc + producto.total,
+              0
+            );
+
+            self.form.total = self.form.total.toFixed(2);
+
+            self.form.saldo =
+              parseFloat(self.form.saldo_actual) - parseFloat(self.form.total);
+            self.form.saldo = self.form.saldo.toFixed(2);
+          })
+          .catch(() => {
+            self.triggerNegative("Ha ocurrido un error al eliminar");
+          });
+      } else {
+        self.dataBaseLocalDeleteProduct(data, indice);
+      }
     },
     clearForm() {
       let self = this;
@@ -675,7 +930,6 @@ export default {
           self.printReceipt(receiptContent);
 
           self.clearForm();
-
         })
         .catch((error) => {
           if (error.response && error.response.data) {
@@ -701,9 +955,9 @@ export default {
               <td>${producto.cantidad}</td>
               <td>$${producto.precio}</td>
               <td>$${producto.total}</td>
-             </tr>`
+             </tr>`;
       });
-      var detalleHTML = detalle.join('').toString();
+      var detalleHTML = detalle.join("").toString();
       var html = `
         <div>
           <h2>Recibo de Entrega</h2>
@@ -800,21 +1054,30 @@ export default {
       }
     },
     printReceipt(receiptContent) {
-      ipcRenderer.send('print-receipt', receiptContent);
-      console.log('terminado');
-
-    }
+      ipcRenderer.send("print-receipt", receiptContent);
+      console.log("terminado");
+    },
+    openModalClients() {
+      let self = this;
+      self.getClients();
+      self.modalSearchClient = true;
+    },
   },
   created() {
     this.getClients();
     this.getProducts();
+    //Pendiente
     this.getSavedOrders();
   },
-  mounted() { },
+  mounted() {},
 };
 </script>
 
 <style scoped>
+.no-padding-no-margin {
+  padding: 0 !important;
+  margin: 0 !important;
+}
 .custom-font p {
   font-size: 16px;
   /* Ajusta el tamaño de letra según tus necesidades */

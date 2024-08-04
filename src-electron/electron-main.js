@@ -5,7 +5,7 @@ import os from "os";
 const {
   initializeDatabase,
   registerHandlers,
-  replicateClientes,
+  replicateData,
 } = require("./ipcHandlers");
 
 // needed in case process is undefined under Linux
@@ -75,7 +75,6 @@ app.whenReady().then(async () => {
   initializeDatabase();
   registerHandlers();
   createWindow();
-  replicateClientes();
 });
 
 app.on("window-all-closed", () => {
@@ -88,6 +87,19 @@ app.on("activate", () => {
   if (mainWindow === null) {
     createWindow();
   }
+});
+
+app.on("ready", async () => {
+  // Otras configuraciones de Electron
+
+  // Ejecutar la replicación cada 5 minutos
+
+  //SE DEBE EJECUTAR EL REPLICADO CADA
+  setInterval(async () => {
+    replicateData();
+  }, 300000); // 300000 ms = 5 minutos  5000
+
+  // También puedes ejecutar la replicación inmediatamente al inicio
 });
 
 export default db;
