@@ -245,11 +245,13 @@
           <q-btn
             style="background-color: #00cfff; color: white; font-size: 20px"
             label="GUARDAR"
+            :disable="isDisabled"
             @click="save"
             icon="save"
           />
           <q-btn
             @click="saveSale"
+            :disable="isDisabled"
             color="green"
             label="PAGAR"
             style="font-size: 20px"
@@ -493,6 +495,7 @@ export default {
       ],
       pedidos_guardados_cabecera: [],
       pedidos_guardados: [],
+      isDisabled: false,
     };
   },
   watch: {
@@ -918,6 +921,7 @@ export default {
     },
     saveSale() {
       let self = this;
+      self.isDisabled = true;
       this.$axios
         .post(`api/venta-encabezados`, { ...self.form })
         .then(({ data }) => {
@@ -930,8 +934,10 @@ export default {
           self.printReceipt(receiptContent);
 
           self.clearForm();
+          self.isDisabled = false;
         })
         .catch((error) => {
+          self.isDisabled = false;
           if (error.response && error.response.data) {
             //Devuelvo todos los productos
             // Esto debo cabiar porque solo si tiene el ID comienzo a devolevr
@@ -987,6 +993,7 @@ export default {
     },
     save() {
       let self = this;
+      self.isDisabled = true;
       if (self.form.productos.length > 0) {
         if (self.form.id) {
           //Verificar
@@ -998,8 +1005,10 @@ export default {
               self.getSavedOrders();
               self.triggerPositive("Guardado");
               self.clearForm();
+              self.isDisabled = false;
             })
             .catch((error) => {
+              self.isDisabled = false;
               if (error.response && error.response.data) {
                 //Devuelvo todos los productos
 
@@ -1028,8 +1037,10 @@ export default {
               self.getSavedOrders();
               self.triggerPositive("Guardado");
               self.clearForm();
+              self.isDisabled = false;
             })
             .catch((error) => {
+              self.isDisabled = false;
               if (error.response && error.response.data) {
                 //Devuelvo todos los productos
                 if (error.response.status === 409) {
@@ -1050,6 +1061,7 @@ export default {
             });
         }
       } else {
+        self.isDisabled = false;
         self.triggerNegative("Debe tener añadido por lo mínimo un producto");
       }
     },
