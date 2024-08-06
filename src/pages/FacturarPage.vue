@@ -26,7 +26,7 @@
 
               <q-card-section>
                 <div class="row no-wrap items-center">
-                  <div class="col ellipsis">{{ data.nombre }}</div>
+                  <div class="col">{{ data.nombre }}</div>
                 </div>
                 <div class="row justify-center">
                   <q-btn :disable="form.cliente_id == ''" flat style="font-size: 10px" color="primary"
@@ -197,7 +197,7 @@
         <q-btn-group spread>
           <q-btn style="background-color: #00cfff; color: white; font-size: 20px" label="GUARDAR" @click="save"
             icon="save" />
-          <q-btn @click="saveSale" color="green" label="PAGAR" style="font-size: 20px" icon="money" />
+          <q-btn @click="saveSale" :disable="block" color="green" label="PAGAR" style="font-size: 20px" icon="money" />
         </q-btn-group>
       </div>
     </div>
@@ -392,8 +392,35 @@ export default {
         { name: "total", label: "Total", align: "right", field: "total" },
         { name: "acciones", label: "", align: "right" },
       ],
-      pedidos_guardados_cabecera: [],
+      pedidos_guardados_cabecera: [
+        {
+          name: "nombres",
+          label: "Cliente",
+          align: "left",
+          field: "nombres",
+        },
+        {
+          name: "fecha",
+          label: "Fecha",
+          align: "left",
+          field: "fecha",
+        },
+        {
+          name: "saldo",
+          label: "Saldo",
+          align: "right",
+          field: "saldo",
+        },
+        {
+          name: "total",
+          label: "$ Total",
+          align: "right",
+          field: "total",
+        },
+        { name: "acciones", label: "", align: "right" },
+      ],
       pedidos_guardados: [],
+      block: false,
     };
   },
   watch: {
@@ -661,9 +688,10 @@ export default {
         iva: 0.0,
       };
     },
-    saveSale() {
+    async saveSale() {
+      this.block = true;
       let self = this;
-      this.$axios
+      await this.$axios
         .post(`api/venta-encabezados`, { ...self.form })
         .then(({ data }) => {
           self.getClients();
@@ -694,6 +722,7 @@ export default {
             self.triggerNegative("Ocurrió un error inesperado.");
           }
         });
+      this.block = false;
     },
     generateReceipt(data) {
       var detalle = data.productos.map((producto) => {
@@ -705,17 +734,17 @@ export default {
       });
       var detalleHTML = detalle.join('').toString();
       var html = `
-        <div>
-          <h2>Recibo de Entrega</h2>
+        <div style="font-size:10px;">
+          <h4>Recibo de Entrega</h4>
           <p>Cliente: ${data.nombre_completo}</p>
           <p>Saldo Actual: ${data.saldo}</p>
           <p>Fecha: ${new Date().toLocaleString()}</p>
-          <table>
+          <table style="font-size:10px">
             <thead>
               <tr>
-                <th>Producto</th>
-                <th>Cantidad</th>
-                <th>Precio</th>
+                <th>producto</th>
+                <th>cant</th>
+                <th>pre</th>
                 <th>Total</th>
               </tr>
             </thead>
