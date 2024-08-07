@@ -10,27 +10,58 @@
           </template>
         </q-input>
         <q-separator spaced />
-        <q-btn-toggle v-model="secondModel" spread class="my-custom-toggle" no-caps unelevated toggle-color="primary"
-          color="white" size="15px" text-color="primary" :options="[
+        <q-btn-toggle
+          v-model="secondModel"
+          spread
+          class="my-custom-toggle"
+          no-caps
+          unelevated
+          toggle-color="primary"
+          color="white"
+          size="15px"
+          text-color="primary"
+          :options="[
             { label: 'CATEGORIAS', value: 'one' },
             { label: 'PRODUCTOS', value: 'two' },
-          ]" />
+          ]"
+        />
         <q-separator spaced />
 
         <div style="max-height: 60vh" class="scroll">
           <div class="q-pa-md row justify-center q-gutter-md">
-            <q-card style="width: 100px" class="my-card" flat bordered v-for="(data, index) in products" :key="index">
-              <q-img v-if="data.img && data.img != ''" :src="data.img" class="my-img"
-                style="width: 100px; height: 100px" />
-              <q-img v-else src="src/assets/images/no-image.png" class="my-img" style="width: 100px; height: 100px" />
+            <q-card
+              style="width: 100px"
+              class="my-card"
+              flat
+              bordered
+              v-for="(data, index) in products"
+              :key="index"
+            >
+              <q-img
+                v-if="data.img && data.img != ''"
+                :src="data.img"
+                class="my-img"
+                style="width: 100px; height: 100px"
+              />
+              <q-img
+                v-else
+                src="src/assets/images/no-image.png"
+                class="my-img"
+                style="width: 100px; height: 100px"
+              />
 
               <q-card-section>
                 <div class="row no-wrap items-center">
                   <div class="col">{{ data.nombre }}</div>
                 </div>
                 <div class="row justify-center">
-                  <q-btn :disable="form.cliente_id == ''" flat style="font-size: 10px" color="primary"
-                    @click="getProductInformation(data)">
+                  <q-btn
+                    :disable="form.cliente_id == ''"
+                    flat
+                    style="font-size: 10px"
+                    color="primary"
+                    @click="getProductInformation(data)"
+                  >
                     Agregar
                   </q-btn>
                 </div>
@@ -51,7 +82,12 @@
                   <div class="text-subtitle2">{{ form.cedula }}</div>
                 </div>
                 <div class="col-auto">
-                  <q-btn @click="modalSearchClient = true" color="secondary" icon="search" icon-right="person" />
+                  <q-btn
+                    @click="openModalClients"
+                    color="secondary"
+                    icon="search"
+                    icon-right="person"
+                  />
                 </div>
               </q-card-section>
               <q-separator />
@@ -98,8 +134,18 @@
 
               <q-card-section class="q-pa-sm">
                 <div style="width: 100%; height: 300px; overflow: auto">
-                  <q-table flat bordered :rows="form.productos" :columns="columns1" row-key="id" virtual-scroll
-                    v-model:pagination="pagination" :rows-per-page-options="[]" hide-bottom class="custom-table">
+                  <q-table
+                    flat
+                    bordered
+                    :rows="form.productos"
+                    :columns="columns1"
+                    row-key="id"
+                    virtual-scroll
+                    v-model:pagination="pagination"
+                    :rows-per-page-options="[]"
+                    hide-bottom
+                    class="custom-table"
+                  >
                     <template v-slot:body-cell-precio="props">
                       <q-td :props="props">
                         ${{ props.row.precio }}
@@ -131,7 +177,13 @@
 
                     <template v-slot:body-cell-acciones="props">
                       <q-td :props="props">
-                        <q-btn color="negative" icon="delete" @click="deleteProduct(props.row, props.rowIndex)" dense />
+                        <q-btn
+                          color="negative"
+                          icon="delete"
+                          :disable="isDisabled"
+                          @click="deleteProduct(props.row, props.rowIndex)"
+                          dense
+                        />
                       </q-td>
                     </template>
                   </q-table>
@@ -166,7 +218,9 @@
                 <div class="row items-center" style="width: 100%">
                   <q-item-label class="col text-start">Subtotal:</q-item-label>
                   <div class="col-auto row justify-end">
-                    <q-item-label class="col text-start">${{ form.subtotal }}</q-item-label>
+                    <q-item-label class="col text-start"
+                      >${{ form.subtotal }}</q-item-label
+                    >
                   </div>
                 </div>
               </q-card-actions>
@@ -174,7 +228,9 @@
                 <div class="row items-center" style="width: 100%">
                   <q-item-label class="col text-start">IVA:</q-item-label>
                   <div class="col-auto row justify-end">
-                    <q-item-label class="col text-start">${{ form.iva }}</q-item-label>
+                    <q-item-label class="col text-start"
+                      >${{ form.iva }}</q-item-label
+                    >
                   </div>
                 </div>
               </q-card-actions>
@@ -184,10 +240,13 @@
 
         <div class="q-mt-md q-mx-md q-pa-md" style="background: #1976d2">
           <div class="row items-center" style="width: 100%">
-            <q-item-label class="col text-start" style="color: white"><strong>TOTAL</strong></q-item-label>
+            <q-item-label class="col text-start" style="color: white"
+              ><strong>TOTAL</strong></q-item-label
+            >
             <div class="col-auto row justify-end">
-              <q-item-label class="col text-start" style="color: white"><strong>${{ form.total
-                  }}</strong></q-item-label>
+              <q-item-label class="col text-start" style="color: white"
+                ><strong>${{ form.total }}</strong></q-item-label
+              >
             </div>
           </div>
         </div>
@@ -195,9 +254,21 @@
 
       <div class="col-md-12">
         <q-btn-group spread>
-          <q-btn style="background-color: #00cfff; color: white; font-size: 20px" label="GUARDAR" @click="save"
-            icon="save" />
-          <q-btn @click="saveSale" :disable="block" color="green" label="PAGAR" style="font-size: 20px" icon="money" />
+          <q-btn
+            style="background-color: #00cfff; color: white; font-size: 20px"
+            label="GUARDAR"
+            @click="save"
+            :disable="isDisabled"
+            icon="save"
+          />
+          <q-btn
+            @click="saveSale"
+            :disable="block"
+            color="green"
+            label="PAGAR"
+            style="font-size: 20px"
+            icon="money"
+          />
         </q-btn-group>
       </div>
     </div>
@@ -206,18 +277,31 @@
       <q-card style="width: 700px; max-width: 80vw">
         <q-toolbar>
           <q-avatar>
-            <img src="https://contifico.com/wp-content/uploads/2020/06/isotipo-contifico-1.png" />
+            <img
+              src="https://contifico.com/wp-content/uploads/2020/06/isotipo-contifico-1.png"
+            />
           </q-avatar>
 
-          <q-toolbar-title class="text-center">Listado de Pedidos Guardados</q-toolbar-title>
+          <q-toolbar-title class="text-center"
+            >Listado de Pedidos Guardados</q-toolbar-title
+          >
 
           <q-btn flat round dense icon="close" v-close-popup />
         </q-toolbar>
         <q-card-section class="q-pa-sm">
           <div style="width: 100%; height: 300px; overflow: auto">
-            <q-table flat bordered :rows="pedidos_guardados" :columns="pedidos_guardados_cabecera" row-key="id"
-              virtual-scroll v-model:pagination="pagination" :rows-per-page-options="[]" hide-bottom
-              class="custom-table">
+            <q-table
+              flat
+              bordered
+              :rows="pedidos_guardados"
+              :columns="pedidos_guardados_cabecera"
+              row-key="id"
+              virtual-scroll
+              v-model:pagination="pagination"
+              :rows-per-page-options="[]"
+              hide-bottom
+              class="custom-table"
+            >
               <template v-slot:body-cell-precio="props">
                 <q-td :props="props"> ${{ props.row.precio }} </q-td>
               </template>
@@ -226,8 +310,18 @@
               </template>
               <template v-slot:body-cell-acciones="props">
                 <q-td :props="props">
-                  <q-btn color="primary" icon="restore" @click="recoverOrder(props.row, props.rowIndex)" dense />
-                  <q-btn color="negative" icon="delete" @click="deleteOrder(props.row, props.rowIndex)" dense />
+                  <q-btn
+                    color="primary"
+                    icon="restore"
+                    @click="recoverOrder(props.row, props.rowIndex)"
+                    dense
+                  />
+                  <q-btn
+                    color="negative"
+                    icon="delete"
+                    @click="deleteOrder(props.row, props.rowIndex)"
+                    dense
+                  />
                 </q-td>
               </template>
             </q-table>
@@ -240,16 +334,21 @@
       <q-card style="width: 700px; max-width: 80vw">
         <q-toolbar>
           <q-avatar>
-            <img src="https://contifico.com/wp-content/uploads/2020/06/isotipo-contifico-1.png" />
+            <img
+              src="https://contifico.com/wp-content/uploads/2020/06/isotipo-contifico-1.png"
+            />
           </q-avatar>
 
-          <q-toolbar-title class="text-center">Listado de Personas</q-toolbar-title>
+          <q-toolbar-title class="text-center"
+            >Listado de Personas</q-toolbar-title
+          >
 
           <q-btn flat round dense icon="close" v-close-popup />
         </q-toolbar>
 
         <q-card-section>
-          <q-input v-model="searchClient" label="Cliente"><template v-slot:prepend>
+          <q-input v-model="searchClient" label="Cliente"
+            ><template v-slot:prepend>
               <q-icon name="searchss" />
             </template>
           </q-input>
@@ -288,18 +387,33 @@
               Stock: {{ product.stock }}
             </div>
           </div>
-          <q-input type="number" v-model="product.cantidad" :max="product.stock" :min="1" label="Cantidad" outlined
-            class="q-mt-sm" lazy-rules :rules="[
+          <q-input
+            type="number"
+            v-model="product.cantidad"
+            :max="product.stock"
+            :min="1"
+            label="Cantidad"
+            outlined
+            class="q-mt-sm"
+            lazy-rules
+            :rules="[
               (val) =>
                 (val > 0 && val <= product.stock) ||
                 'La cantidad debe estar dentro del rango',
-            ]" />
+            ]"
+          />
         </q-card-section>
 
         <q-separator />
 
         <q-card-actions align="right">
-          <q-btn flat color="primary" @click="addProducts(product)" label="Añadir" />
+          <q-btn
+            flat
+            color="primary"
+            :disable="isDisabled"
+            @click="addProducts(product)"
+            label="Añadir"
+          />
           <q-btn v-close-popup flat color="primary" label="Cancelar" />
         </q-card-actions>
       </q-card>
@@ -308,7 +422,7 @@
 </template>
 
 <script>
-const { ipcRenderer } = require('electron');
+const { ipcRenderer } = require("electron");
 export default {
   name: "facturarPage",
   data() {
@@ -421,6 +535,7 @@ export default {
       ],
       pedidos_guardados: [],
       block: false,
+      isDisabled: false,
     };
   },
   watch: {
@@ -481,8 +596,23 @@ export default {
     },
     openSave() {
       let self = this;
+
+      if (self.form.id) {
+        self.triggerNegative(
+          "Ya existe un Pedido guardado con este cliente, por favor proceder a guardar nuevamente."
+        );
+        return;
+      }
+
+      if (self.form.productos.length > 0) {
+        self.triggerNegative(
+          "Debe eliminar los Productos para cambiar de cliente"
+        );
+        return;
+      }
       self.modalGuardadoClient = true;
       self.clearForm();
+      self.getSavedOrders();
     },
     getClients(nombres = null) {
       let self = this;
@@ -519,6 +649,20 @@ export default {
     },
     getCustomerData(data) {
       let self = this;
+      if (self.form.id) {
+        self.triggerNegative(
+          "Tienes un pedido actual, por favor proceder a guardar el pedido."
+        );
+        return;
+      }
+
+      if (self.form.productos.length > 0) {
+        self.triggerNegative(
+          "Debe eliminar los Productos para cambiar de cliente"
+        );
+        return;
+      }
+      self.form.id = "";
       self.form.cliente_id = data.id;
       self.form.nombre_completo = data.nombres;
       self.form.cedula = data.cedula;
@@ -579,10 +723,12 @@ export default {
       // parseInt(data.cantidad) > 0 &&
       if (parseInt(data.cantidad) == 0) {
         self.triggerNegative("La cantidad debe ser mayor a 1");
+
         return;
       }
       if (parseInt(data.cantidad) > parseInt(data.stock)) {
         self.triggerNegative("La cantidad debe ser menor o igual al Stock");
+
         return;
       }
 
@@ -598,9 +744,12 @@ export default {
         return;
       }
 
+      self.isDisabled = true;
+
       this.$axios
         .get(`api/cambio-stock-producto/${data.id}/${data.cantidad}/1`)
         .then((response) => {
+          self.isDisabled = false;
           let existingProduct = self.form.productos.find(
             (producto) => producto.producto_id === data.id
           );
@@ -645,32 +794,82 @@ export default {
           };
           self.cardFlag = false;
         })
-        .catch(() => {
-          self.triggerNegative("Ha ocurrido un error al agregar el producto");
+        .catch((error) => {
+          self.isDisabled = false;
+          if (error.response && error.response.data) {
+            if (error.response.status === 409) {
+              self.triggerNegative(`${error.response.data.message}`);
+            }
+          } else {
+            self.triggerNegative("Ha ocurrido un error al agregar el producto");
+          }
         });
     },
     deleteProduct(data, indice) {
       let self = this;
+      self.isDisabled = true;
+      if (data.id) {
+        this.$axios
+          .get(
+            `api/eliminar-pedido-detalle/${data.id}/${data.producto_id}/${data.cantidad}/2`
+          )
+          .then((response) => {
+            self.isDisabled = false;
+            self.form.productos.splice(indice, 1);
 
-      this.$axios
-        .get(`api/cambio-stock-producto/${data.producto_id}/${data.cantidad}/2`)
-        .then((response) => {
-          self.form.productos.splice(indice, 1);
+            self.form.total = self.form.productos.reduce(
+              (acc, producto) => acc + producto.total,
+              0
+            );
 
-          self.form.total = self.form.productos.reduce(
-            (acc, producto) => acc + producto.total,
-            0
-          );
+            self.form.total = self.form.total.toFixed(2);
 
-          self.form.total = self.form.total.toFixed(2);
+            self.form.saldo =
+              parseFloat(self.form.saldo_actual) - parseFloat(self.form.total);
+            self.form.saldo = self.form.saldo.toFixed(2);
+          })
+          .catch((error) => {
+            self.isDisabled = false;
+            console.log(error);
+            if (error.response && error.response.data) {
+              if (error.response.status === 409) {
+                self.triggerNegative(`${error.response.data.message}`);
+              }
+            } else {
+              self.triggerNegative("Ha ocurrido un error al eliminar");
+            }
+          });
+      } else {
+        this.$axios
+          .get(
+            `api/cambio-stock-producto/${data.producto_id}/${data.cantidad}/2`
+          )
+          .then((response) => {
+            self.isDisabled = false;
+            self.form.productos.splice(indice, 1);
 
-          self.form.saldo =
-            parseFloat(self.form.saldo_actual) - parseFloat(self.form.total);
-          self.form.saldo = self.form.saldo.toFixed(2);
-        })
-        .catch(() => {
-          self.triggerNegative("Ha ocurrido un error al eliminar");
-        });
+            self.form.total = self.form.productos.reduce(
+              (acc, producto) => acc + producto.total,
+              0
+            );
+
+            self.form.total = self.form.total.toFixed(2);
+
+            self.form.saldo =
+              parseFloat(self.form.saldo_actual) - parseFloat(self.form.total);
+            self.form.saldo = self.form.saldo.toFixed(2);
+          })
+          .catch((error) => {
+            self.isDisabled = false;
+            if (error.response && error.response.data) {
+              if (error.response.status === 409) {
+                self.triggerNegative(`${error.response.data.message}`);
+              }
+            } else {
+              self.triggerNegative("Ha ocurrido un error al eliminar");
+            }
+          });
+      }
     },
     clearForm() {
       let self = this;
@@ -691,38 +890,42 @@ export default {
     async saveSale() {
       this.block = true;
       let self = this;
-      await this.$axios
-        .post(`api/venta-encabezados`, { ...self.form })
-        .then(({ data }) => {
-          self.getClients();
-          self.getProducts();
-          self.getSavedOrders();
-          self.triggerPositive("Venta Guardada");
-          // Generar el recibo y enviarlo a la impresora
-          const receiptContent = self.generateReceipt(self.form);
-          self.printReceipt(receiptContent);
+      if (self.form.productos.length > 0) {
+        await this.$axios
+          .post(`api/venta-encabezados`, { ...self.form })
+          .then(({ data }) => {
+            self.getClients();
+            self.getProducts();
+            self.getSavedOrders();
+            self.triggerPositive("Venta Guardada");
+            // Generar el recibo y enviarlo a la impresora
+            const receiptContent = self.generateReceipt(self.form);
+            self.printReceipt(receiptContent);
 
-          self.clearForm();
-
-        })
-        .catch((error) => {
-          if (error.response && error.response.data) {
-            //Devuelvo todos los productos
-            // Esto debo cabiar porque solo si tiene el ID comienzo a devolevr
-            if (error.response.status === 409) {
-              self.form.productos = [];
-              self.form.descuento = 0.0;
-              self.form.subtotal_iva = 0.0;
-              self.form.subtotal = 0.0;
-              self.form.total = 0.0;
-              self.form.iva = 0.0;
-              self.triggerNegative(`${error.response.data.message}`);
+            self.clearForm();
+          })
+          .catch((error) => {
+            if (error.response && error.response.data) {
+              //Devuelvo todos los productos
+              // Esto debo cabiar porque solo si tiene el ID comienzo a devolevr
+              if (error.response.status === 409) {
+                self.form.productos = [];
+                self.form.descuento = 0.0;
+                self.form.subtotal_iva = 0.0;
+                self.form.subtotal = 0.0;
+                self.form.total = 0.0;
+                self.form.iva = 0.0;
+                self.triggerNegative(`${error.response.data.message}`);
+              }
+            } else {
+              self.triggerNegative("Ocurrió un error inesperado.");
             }
-          } else {
-            self.triggerNegative("Ocurrió un error inesperado.");
-          }
-        });
-      this.block = false;
+          });
+        this.block = false;
+      } else {
+        self.triggerNegative("Debe seleccionar por lo mínimo un producto.");
+        this.block = false;
+      }
     },
     generateReceipt(data) {
       var detalle = data.productos.map((producto) => {
@@ -730,9 +933,9 @@ export default {
               <td>${producto.cantidad}</td>
               <td>$${producto.precio}</td>
               <td>$${producto.total}</td>
-             </tr>`
+             </tr>`;
       });
-      var detalleHTML = detalle.join('').toString();
+      var detalleHTML = detalle.join("").toString();
       var html = `
         <div style="font-size:10px;">
           <h4>Recibo de Entrega</h4>
@@ -762,6 +965,7 @@ export default {
     },
     save() {
       let self = this;
+      self.isDisabled = true;
       if (self.form.productos.length > 0) {
         if (self.form.id) {
           //Verificar
@@ -773,8 +977,10 @@ export default {
               self.getSavedOrders();
               self.triggerPositive("Guardado");
               self.clearForm();
+              self.isDisabled = false;
             })
             .catch((error) => {
+              self.isDisabled = false;
               if (error.response && error.response.data) {
                 //Devuelvo todos los productos
 
@@ -803,8 +1009,10 @@ export default {
               self.getSavedOrders();
               self.triggerPositive("Guardado");
               self.clearForm();
+              self.isDisabled = false;
             })
             .catch((error) => {
+              self.isDisabled = false;
               if (error.response && error.response.data) {
                 //Devuelvo todos los productos
                 if (error.response.status === 409) {
@@ -825,21 +1033,26 @@ export default {
             });
         }
       } else {
+        self.isDisabled = false;
         self.triggerNegative("Debe tener añadido por lo mínimo un producto");
       }
     },
     printReceipt(receiptContent) {
-      ipcRenderer.send('print-receipt', receiptContent);
-      console.log('terminado');
-
-    }
+      ipcRenderer.send("print-receipt", receiptContent);
+      console.log("terminado");
+    },
+    openModalClients() {
+      let self = this;
+      self.getClients();
+      self.modalSearchClient = true;
+    },
   },
   created() {
     this.getClients();
     this.getProducts();
     this.getSavedOrders();
   },
-  mounted() { },
+  mounted() {},
 };
 </script>
 
