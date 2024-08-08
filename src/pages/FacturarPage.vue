@@ -148,13 +148,13 @@
                   >
                     <template v-slot:body-cell-precio="props">
                       <q-td :props="props">
-                        ${{ props.row.precio }}
+                        ${{ props.row.precio.toFixed(2) }}
                         <!-- <q-input v-model="props.row.nombre" dense /> -->
                       </q-td>
                     </template>
                     <template v-slot:body-cell-total="props">
                       <q-td :props="props">
-                        ${{ props.row.total }}
+                        ${{ props.row.total.toFixed(2) }}
                         <!-- <q-input v-model="props.row.nombre" dense /> -->
                       </q-td>
                     </template>
@@ -163,7 +163,7 @@
                       <q-td :props="props">
                         <q-input
                           v-model="props.row.cantidad"
-                          type="number"
+                          type="parseFloat"
                           dense
                         />
                       </q-td>
@@ -171,7 +171,7 @@
 
                     <!-- <template v-slot:body-cell-precio="props">
                       <q-td :props="props">
-                        <q-input v-model="props.row.precio" type="number" dense />
+                        <q-input v-model="props.row.precio" type="parseFloat" dense />
                       </q-td>
                     </template> -->
 
@@ -245,7 +245,7 @@
             >
             <div class="col-auto row justify-end">
               <q-item-label class="col text-start" style="color: white"
-                ><strong>${{ form.total }}</strong></q-item-label
+                ><strong>${{ form.total.toFixed(2) }}</strong></q-item-label
               >
             </div>
           </div>
@@ -303,10 +303,10 @@
               class="custom-table"
             >
               <template v-slot:body-cell-precio="props">
-                <q-td :props="props"> ${{ props.row.precio }} </q-td>
+                <q-td :props="props"> ${{ props.row.precio.toFixed(2) }} </q-td>
               </template>
               <template v-slot:body-cell-total="props">
-                <q-td :props="props"> ${{ props.row.total }} </q-td>
+                <q-td :props="props"> ${{ props.row.total.toFixed(2) }} </q-td>
               </template>
               <template v-slot:body-cell-acciones="props">
                 <q-td :props="props">
@@ -319,6 +319,7 @@
                   <q-btn
                     color="negative"
                     icon="delete"
+                    :disable="isDisabled"
                     @click="deleteOrder(props.row, props.rowIndex)"
                     dense
                   />
@@ -558,13 +559,16 @@ export default {
     },
     deleteOrder(data, indice) {
       let self = this;
+      self.isDisabled = true;
       this.$axios
         .delete(`api/pedidos-encabezados/${data.id}`)
         .then(({ data }) => {
+          self.isDisabled = false;
           self.pedidos_guardados.splice(indice, 1);
           self.triggerPositive("Pedido Eliminado");
         })
         .catch((error) => {
+          self.isDisabled = false;
           self.triggerNegative(error);
         });
     },
@@ -722,7 +726,7 @@ export default {
 
       // parseInt(data.cantidad) > 0 &&
       if (parseInt(data.cantidad) == 0) {
-        self.triggerNegative("La cantidad debe ser mayor a 1");
+        self.triggerNegative("La cantidad debe ser mayor a cero");
 
         return;
       }
@@ -732,14 +736,28 @@ export default {
         return;
       }
 
-      let total = self.form.productos.reduce(
-        (acc, producto) => acc + producto.total,
-        0
-      );
+      let total = self.form.productos.reduce((acc, producto) => {
+        // Multiplica por 100 para trabajar con enteros
+        let productoTotal = Math.round(producto.total * 100);
+        return acc + productoTotal;
+      }, 0);
 
-      total += parseFloat(data.cantidad) * data.precio;
+      total = parseFloat(total.toFixed(2));
 
-      if (total > self.form.saldo_actual) {
+      let tvalue = parseFloat(data.cantidad) * parseFloat(data.precio);
+      tvalue = parseFloat(tvalue.toFixed(2));
+      tvalue = Math.round(tvalue * 100);
+      console.log("Antes ", total, tvalue);
+      total += tvalue;
+
+      total = total / 100;
+
+      total = parseFloat(total.toFixed(2));
+
+      if (
+        parseFloat(total) >
+        parseFloat(parseFloat(self.form.saldo_actual).toFixed(2))
+      ) {
         self.triggerNegative("No tiene suficiente saldo");
         return;
       }
@@ -757,32 +775,47 @@ export default {
           if (existingProduct) {
             // Si el producto ya existe, actualizar cantidad y total
             existingProduct.cantidad =
-              parseFloat(existingProduct.cantidad) + parseFloat(data.cantidad); // Sumar la nueva cantidad
+              parseInt(existingProduct.cantidad) + parseInt(data.cantidad); // Sumar la nueva cantidad
             existingProduct.total =
-              existingProduct.cantidad * existingProduct.precio; // Recalcular el total
+              parseFloat(existingProduct.cantidad) *
+              parseFloat(existingProduct.precio); // Recalcular el total
+            existingProduct.total = Math.round(existingProduct.total * 100);
+            existingProduct.total = parseFloat(
+              (existingProduct.total / 100).toFixed(2)
+            );
           } else {
             // Si el producto no existe, agregarlo a la lista
+            let valuTotal = Math.round(data.precio * 100) * data.cantidad;
+
+            valuTotal = parseFloat((valuTotal / 100).toFixed(2));
+
             self.form.productos.push({
               producto_id: data.id,
               nombre: data.nombre,
               img: data.img,
               cantidad: data.cantidad,
               precio: data.precio,
-              total: parseFloat(data.cantidad) * parseFloat(data.precio),
+              total: valuTotal,
             });
           }
 
-          self.form.total = self.form.productos.reduce(
-            (acc, producto) => acc + producto.total,
-            0
-          );
+          self.form.total = self.form.productos.reduce((acc, producto) => {
+            // Multiplica por 100 para trabajar con enteros
+            let productoTotal = Math.round(producto.total * 100);
+            return acc + productoTotal;
+          }, 0);
 
-          self.form.total = self.form.total.toFixed(2);
+          self.form.total = self.form.total / 100;
 
-          self.form.saldo =
-            parseFloat(self.form.saldo_actual) - parseFloat(self.form.total);
+          self.form.total = parseFloat(self.form.total.toFixed(2));
 
-          self.form.saldo = self.form.saldo.toFixed(2);
+          let sald2 =
+            Math.round(self.form.saldo_actual * 100) -
+            Math.round(self.form.total * 100);
+
+          sald2 = sald2 / 100;
+
+          self.form.saldo = parseFloat(sald2.toFixed(2));
 
           self.product = {
             id: "",
@@ -795,6 +828,7 @@ export default {
           self.cardFlag = false;
         })
         .catch((error) => {
+          console.log(error);
           self.isDisabled = false;
           if (error.response && error.response.data) {
             if (error.response.status === 409) {
@@ -817,16 +851,21 @@ export default {
             self.isDisabled = false;
             self.form.productos.splice(indice, 1);
 
-            self.form.total = self.form.productos.reduce(
-              (acc, producto) => acc + producto.total,
-              0
-            );
+            self.form.total = self.form.productos.reduce((acc, producto) => {
+              // Multiplica por 100 para trabajar con enteros
+              let productoTotal = Math.round(producto.total * 100);
+              return acc + productoTotal;
+            }, 0);
 
-            self.form.total = self.form.total.toFixed(2);
+            self.form.total = self.form.total / 100;
+            self.form.total = parseFloat(self.form.total.toFixed(2));
 
-            self.form.saldo =
-              parseFloat(self.form.saldo_actual) - parseFloat(self.form.total);
-            self.form.saldo = self.form.saldo.toFixed(2);
+            let r =
+              Math.round(self.form.saldo_actual * 100) -
+              Math.round(self.form.total * 100);
+            r = r / 100;
+            r = parseFloat(r.toFixed(2));
+            self.form.saldo = r;
           })
           .catch((error) => {
             self.isDisabled = false;
@@ -853,11 +892,15 @@ export default {
               0
             );
 
-            self.form.total = self.form.total.toFixed(2);
+            self.form.total = parseFloat(
+              parseFloat(self.form.total).toFixed(2)
+            );
 
             self.form.saldo =
               parseFloat(self.form.saldo_actual) - parseFloat(self.form.total);
-            self.form.saldo = self.form.saldo.toFixed(2);
+            self.form.saldo = parseFloat(
+              parseFloat(self.form.saldo).toFixed(2)
+            );
           })
           .catch((error) => {
             self.isDisabled = false;
