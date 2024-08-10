@@ -8,66 +8,73 @@ class VentaEncabezadoController {
     request.user_id = 1;
     request.fecha = new Date().toISOString().split("T")[0];
 
-    const trx = await db.transaction();
+    let trx = await db.transaction();
 
     try {
       let orderHeader = null;
 
       if (request.id) {
-        orderHeader = await trx("pedido_encabezados")
+        orderHeader = await trx("pedidos_encabezados")
           .where("id", request.id)
           .first();
       } else {
-        orderHeader = await trx("pedido_encabezados")
+        orderHeader = await trx("pedidos_encabezados")
           .where("cliente_id", request.cliente_id)
           .andWhere("estado", 1)
+          // .andWhere("replicado", 0)
           .first();
 
         if (orderHeader) {
           for (let detail of request.productos) {
-            const orderDetailAmount = await trx("pedido_detalles")
-              .where("pedido_encabezado_id", orderHeader.id)
-              .andWhere("producto_id", detail.producto_id)
-              .andWhere("estado", 1)
-              .sum("cantidad");
-            const newAmount =
-              parseFloat(detail.cantidad) - parseFloat(orderDetailAmount);
-
+            let newAmount = detail.cantidad;
             await productController.changeProductStockValue(
               detail.producto_id,
               newAmount,
-              2
+              2,
+              trx
             );
           }
 
           await trx.commit();
 
           return {
-            success: false,
-            message:
-              "La solicitud no puede ser procesada porque ya existe un pedido guardado de ese cliente.",
-            status: 409, // 409 Conflict
+            data: {
+              success: false,
+              message:
+                "La solicitud no puede ser procesada porque ya existe un pedido guardado de ese cliente.",
+              status: 409, // 409 Conflict
+            },
           };
         }
       }
 
       // Crear el encabezado de venta
-      const saleHeader = await trx("venta_encabezados").insert(
+      let saleHeader = await trx("ventas_encabezados").insert(
         {
-          ...request,
+          user_id: request.user_id,
+          cliente_id: request.cliente_id,
+          saldo: request.saldo,
+          iva: request.iva,
+          total: request.total,
+          saldo_actual: request.saldo_actual,
+          fecha: request.fecha,
         },
         ["id"]
-      )[0];
+      );
 
       // Crear los detalles de la venta
-      for (let detail of request.productos) {
-        await trx("venta_detalles").insert({
-          ...detail,
-          venta_encabezado_id: saleHeader.id,
-        });
-      }
 
-      const client = await trx("clientes")
+      let saleDetails = request.productos.map((detail) => ({
+        venta_encabezado_id: saleHeader[0].id,
+        producto_id: detail.producto_id,
+        cantidad: detail.cantidad,
+        precio: detail.precio,
+        total: detail.total,
+      }));
+
+      await trx("ventas_detalles").insert(saleDetails);
+
+      let client = await trx("clientes")
         .where("id", request.cliente_id)
         .first();
       if (!client) {
@@ -77,11 +84,21 @@ class VentaEncabezadoController {
       // Verificar si tiene un pedido reservado
       if (request.id) {
         orderHeader.estado = 2;
-        await trx("pedido_encabezados")
+        await trx("pedidos_encabezados")
           .where("id", orderHeader.id)
           .update({ estado: orderHeader.estado });
       }
 
+      if (client.valor - request.total < 0) {
+        await trx.rollback();
+        return {
+          data: {
+            success: false,
+            message: "No tiene suficiente saldo el cliente.",
+            status: 409, // 409 Conflict
+          },
+        };
+      }
       client.valor = request.saldo;
       await trx("clientes")
         .where("id", client.id)
@@ -90,17 +107,21 @@ class VentaEncabezadoController {
       await trx.commit();
 
       return {
-        success: true,
-        message: "Transacción realizada con éxito.",
+        data: {
+          success: true,
+          message: "Transacción Realizado con éxito.",
+          status: 200, // 409 Conflict
+        },
       };
     } catch (error) {
       await trx.rollback();
 
       return {
-        success: false,
-        message: "Lo sentimos, algo ha ido mal, inténtelo de nuevo más tarde.",
-        error: error.message,
-        status: 500, // 500 Internal Server Error
+        data: {
+          success: false,
+          message: error,
+          status: 500, // 409 Conflict
+        },
       };
     }
   }

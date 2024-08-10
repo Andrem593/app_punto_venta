@@ -10,6 +10,22 @@
           </template>
         </q-input>
         <q-separator spaced />
+        <q-btn-toggle
+          v-model="secondModel"
+          spread
+          class="my-custom-toggle"
+          no-caps
+          unelevated
+          toggle-color="primary"
+          color="white"
+          size="15px"
+          text-color="primary"
+          :options="[
+            { label: 'CATEGORIAS', value: 'one' },
+            { label: 'PRODUCTOS', value: 'two' },
+          ]"
+        />
+        <q-separator spaced />
 
         <div style="max-height: 60vh" class="scroll">
           <div class="q-pa-md row justify-center q-gutter-md">
@@ -34,14 +50,9 @@
                 style="width: 100px; height: 100px"
               />
 
-              <q-card-section class="no-padding-no-margin">
-                <div class="row items-center" style="height: 100%">
-                  <div
-                    class="col text-center text-bold"
-                    style="font-size: 10px"
-                  >
-                    {{ data.nombre }}
-                  </div>
+              <q-card-section>
+                <div class="row no-wrap items-center">
+                  <div class="col">{{ data.nombre }}</div>
                 </div>
                 <div class="row justify-center">
                   <q-btn
@@ -137,13 +148,13 @@
                   >
                     <template v-slot:body-cell-precio="props">
                       <q-td :props="props">
-                        ${{ props.row.precio }}
+                        ${{ props.row.precio.toFixed(2) }}
                         <!-- <q-input v-model="props.row.nombre" dense /> -->
                       </q-td>
                     </template>
                     <template v-slot:body-cell-total="props">
                       <q-td :props="props">
-                        ${{ props.row.total }}
+                        ${{ props.row.total.toFixed(2) }}
                         <!-- <q-input v-model="props.row.nombre" dense /> -->
                       </q-td>
                     </template>
@@ -152,7 +163,7 @@
                       <q-td :props="props">
                         <q-input
                           v-model="props.row.cantidad"
-                          type="number"
+                          type="parseFloat"
                           dense
                         />
                       </q-td>
@@ -160,7 +171,7 @@
 
                     <!-- <template v-slot:body-cell-precio="props">
                       <q-td :props="props">
-                        <q-input v-model="props.row.precio" type="number" dense />
+                        <q-input v-model="props.row.precio" type="parseFloat" dense />
                       </q-td>
                     </template> -->
 
@@ -169,6 +180,7 @@
                         <q-btn
                           color="negative"
                           icon="delete"
+                          :disable="isDisabled"
                           @click="deleteProduct(props.row, props.rowIndex)"
                           dense
                         />
@@ -233,7 +245,7 @@
             >
             <div class="col-auto row justify-end">
               <q-item-label class="col text-start" style="color: white"
-                ><strong>${{ form.total }}</strong></q-item-label
+                ><strong>${{ form.total.toFixed(2) }}</strong></q-item-label
               >
             </div>
           </div>
@@ -245,13 +257,13 @@
           <q-btn
             style="background-color: #00cfff; color: white; font-size: 20px"
             label="GUARDAR"
-            :disable="isDisabled"
             @click="save"
+            :disable="isDisabled"
             icon="save"
           />
           <q-btn
             @click="saveSale"
-            :disable="isDisabled"
+            :disable="block"
             color="green"
             label="PAGAR"
             style="font-size: 20px"
@@ -291,10 +303,10 @@
               class="custom-table"
             >
               <template v-slot:body-cell-precio="props">
-                <q-td :props="props"> ${{ props.row.precio }} </q-td>
+                <q-td :props="props"> ${{ props.row.precio.toFixed(2) }} </q-td>
               </template>
               <template v-slot:body-cell-total="props">
-                <q-td :props="props"> ${{ props.row.total }} </q-td>
+                <q-td :props="props"> ${{ props.row.total.toFixed(2) }} </q-td>
               </template>
               <template v-slot:body-cell-acciones="props">
                 <q-td :props="props">
@@ -307,6 +319,7 @@
                   <q-btn
                     color="negative"
                     icon="delete"
+                    :disable="isDisabled"
                     @click="deleteOrder(props.row, props.rowIndex)"
                     dense
                   />
@@ -365,7 +378,7 @@
         <q-img v-else src="src/assets/images/no-image.png" />
         <q-card-section>
           <div class="row items-center">
-            <div class="col text-h6 text-center text-bold">
+            <div class="col text-h6 ellipsis text-bold">
               {{ product.nombre }}
             </div>
           </div>
@@ -398,6 +411,7 @@
           <q-btn
             flat
             color="primary"
+            :disable="isDisabled"
             @click="addProducts(product)"
             label="Añadir"
           />
@@ -493,9 +507,38 @@ export default {
         { name: "total", label: "Total", align: "right", field: "total" },
         { name: "acciones", label: "", align: "right" },
       ],
-      pedidos_guardados_cabecera: [],
+      pedidos_guardados_cabecera: [
+        {
+          name: "nombres",
+          label: "Cliente",
+          align: "left",
+          field: "nombres",
+        },
+        {
+          name: "fecha",
+          label: "Fecha",
+          align: "left",
+          field: "fecha",
+        },
+        {
+          name: "saldo",
+          label: "Saldo",
+          align: "right",
+          field: "saldo",
+        },
+        {
+          name: "total",
+          label: "$ Total",
+          align: "right",
+          field: "total",
+        },
+        { name: "acciones", label: "", align: "right" },
+      ],
       pedidos_guardados: [],
+      block: false,
       isDisabled: false,
+      online: false,
+      // online: navigator.onLine,
     };
   },
   watch: {
@@ -516,13 +559,60 @@ export default {
       self.modalGuardadoClient = false;
       self.triggerPositive("Pedido Recuperado");
     },
-    deleteOrder(data, indice) {
+    databaseLocalDeleteOrder(data, indice) {
       let self = this;
-      this.$axios
-        .delete(`api/pedidos-encabezados/${data.id}`)
-        .then(({ data }) => {
+      ipcRenderer
+        .invoke("pedidos-encabezados-delete", data.id)
+        .then((response) => {
+          if (!response.data.success) {
+            // Maneja el error aquí si success es false
+            let error = new Error("Error en la solicitud");
+            let { data } = response;
+            error.data = data;
+            throw error;
+          }
+          self.isDisabled = false;
           self.pedidos_guardados.splice(indice, 1);
           self.triggerPositive("Pedido Eliminado");
+        })
+        .catch((error) => {
+          self.isDisabled = false;
+          if (error.data) {
+            if (error.data.status === 409) {
+              self.triggerNegative(`${error.data.message}`);
+            } else {
+              self.triggerNegative(`${error.data.message}`);
+            }
+          }
+          self.triggerNegative(error);
+        });
+    },
+    deleteOrder(data, indice) {
+      let self = this;
+      self.isDisabled = true;
+      if (self.online) {
+        this.$axios
+          .delete(`api/pedidos-encabezados/${data.id}`)
+          .then(({ data }) => {
+            self.isDisabled = false;
+            self.pedidos_guardados.splice(indice, 1);
+            self.triggerPositive("Pedido Eliminado");
+          })
+          .catch((error) => {
+            self.isDisabled = false;
+            self.triggerNegative(error);
+          });
+      } else {
+        self.databaseLocalDeleteOrder(data, indice);
+      }
+    },
+    databaseLLocalGetSaveOrders() {
+      let self = this;
+      ipcRenderer
+        .invoke("pedidos-encabezados-get")
+        .then((data) => {
+          console.log(data);
+          self.pedidos_guardados = data;
         })
         .catch((error) => {
           self.triggerNegative(error);
@@ -530,14 +620,18 @@ export default {
     },
     getSavedOrders() {
       let self = this;
-      this.$axios
-        .get(`api/pedidos-encabezados`)
-        .then(({ data }) => {
-          self.pedidos_guardados = data;
-        })
-        .catch((error) => {
-          self.triggerNegative(error);
-        });
+      if (self.online) {
+        this.$axios
+          .get(`api/pedidos-encabezados`)
+          .then(({ data }) => {
+            self.pedidos_guardados = data;
+          })
+          .catch((error) => {
+            self.triggerNegative(error);
+          });
+      } else {
+        self.databaseLLocalGetSaveOrders();
+      }
     },
     databaseLocalGetProducts(nombre = null) {
       let self = this;
@@ -556,9 +650,7 @@ export default {
       if (nombre != null && nombre.length > 2) {
         filtro = `&nombre=${nombre}`;
       }
-      let online = navigator.onLine;
-      //CAMBIAR
-      if (!online) {
+      if (self.online) {
         this.$axios
           .get(`api/productos?perPage=all${filtro}`)
           .then(({ data }) => {
@@ -573,6 +665,20 @@ export default {
     },
     openSave() {
       let self = this;
+
+      if (self.form.id) {
+        self.triggerNegative(
+          "Ya existe un Pedido guardado con este cliente, por favor proceder a guardar nuevamente."
+        );
+        return;
+      }
+
+      if (self.form.productos.length > 0) {
+        self.triggerNegative(
+          "Debe eliminar los Productos para cambiar de cliente"
+        );
+        return;
+      }
       self.modalGuardadoClient = true;
       self.clearForm();
       self.getSavedOrders();
@@ -595,9 +701,7 @@ export default {
         filtro = `&nombres=${nombres}`;
       }
 
-      let online = navigator.onLine;
-      //CAMBIAR
-      if (!online) {
+      if (self.online) {
         this.$axios
           .get(`api/clientes?perPage=all${filtro}`)
           .then(({ data }) => {
@@ -619,7 +723,7 @@ export default {
     databaseGetProductInformation(data) {
       let self = this;
       ipcRenderer
-        .invoke("producto", data.id)
+        .invoke("producto-show", data.id)
         .then((data) => {
           console.log(data, "invoke");
           self.product = { cantidad: 1, ...data };
@@ -631,9 +735,8 @@ export default {
     },
     getProductInformation(data) {
       let self = this;
-      let online = navigator.onLine;
-      //CAMBIAR
-      if (!online) {
+
+      if (self.online) {
         this.$axios
           .get(`api/producto/${data.id}`)
           .then(({ data }) => {
@@ -649,6 +752,20 @@ export default {
     },
     getCustomerData(data) {
       let self = this;
+      if (self.form.id) {
+        self.triggerNegative(
+          "Tienes un pedido actual, por favor proceder a guardar el pedido."
+        );
+        return;
+      }
+
+      if (self.form.productos.length > 0) {
+        self.triggerNegative(
+          "Debe eliminar los Productos para cambiar de cliente"
+        );
+        return;
+      }
+      self.form.id = "";
       self.form.cliente_id = data.id;
       self.form.nombre_completo = data.nombres;
       self.form.cedula = data.cedula;
@@ -658,28 +775,31 @@ export default {
       //Aqui devolver al stock, pero debo verificar si tiene un pedido guardado o una venta y solo la diferencia se debe devolbver
 
       if (self.form.productos.length > 0) {
-        this.$axios
-          .post(`api/devolver-cantidad-productos`, {
-            ...self.form,
-          })
-          .then(({ data }) => {
-            self.form.productos = [];
-            self.form.descuento = 0.0;
-            self.form.subtotal_iva = 0.0;
-            self.form.subtotal = 0.0;
-            self.form.total = 0.0;
-            self.form.iva = 0.0;
+        if (self.online) {
+          this.$axios
+            .post(`api/devolver-cantidad-productos`, {
+              ...self.form,
+            })
+            .then(({ data }) => {
+              self.form.productos = [];
+              self.form.descuento = 0.0;
+              self.form.subtotal_iva = 0.0;
+              self.form.subtotal = 0.0;
+              self.form.total = 0.0;
+              self.form.iva = 0.0;
 
-            self.modalSearchClient = false;
-            self.getSavedOrders();
-          })
-          .catch((error) => {
-            if (error.response && error.response.data) {
-              self.triggerNegative(`${error.response.data.message}`);
-            } else {
-              self.triggerNegative("Ocurrió un error inesperado.");
-            }
-          });
+              self.modalSearchClient = false;
+              self.getSavedOrders();
+            })
+            .catch((error) => {
+              if (error.response && error.response.data) {
+                self.triggerNegative(`${error.response.data.message}`);
+              } else {
+                self.triggerNegative("Ocurrió un error inesperado.");
+              }
+            });
+        } else {
+        }
       } else {
         self.form.productos = [];
         self.form.descuento = 0.0;
@@ -713,6 +833,7 @@ export default {
       ipcRenderer
         .invoke("cambio-stock-producto", args)
         .then((response) => {
+          self.isDisabled = false;
           let existingProduct = self.form.productos.find(
             (producto) => producto.producto_id === data.id
           );
@@ -720,32 +841,47 @@ export default {
           if (existingProduct) {
             // Si el producto ya existe, actualizar cantidad y total
             existingProduct.cantidad =
-              parseFloat(existingProduct.cantidad) + parseFloat(data.cantidad); // Sumar la nueva cantidad
+              parseInt(existingProduct.cantidad) + parseInt(data.cantidad); // Sumar la nueva cantidad
             existingProduct.total =
-              existingProduct.cantidad * existingProduct.precio; // Recalcular el total
+              parseFloat(existingProduct.cantidad) *
+              parseFloat(existingProduct.precio); // Recalcular el total
+            existingProduct.total = Math.round(existingProduct.total * 100);
+            existingProduct.total = parseFloat(
+              (existingProduct.total / 100).toFixed(2)
+            );
           } else {
             // Si el producto no existe, agregarlo a la lista
+            let valuTotal = Math.round(data.precio * 100) * data.cantidad;
+
+            valuTotal = parseFloat((valuTotal / 100).toFixed(2));
+
             self.form.productos.push({
               producto_id: data.id,
               nombre: data.nombre,
               img: data.img,
               cantidad: data.cantidad,
               precio: data.precio,
-              total: parseFloat(data.cantidad) * parseFloat(data.precio),
+              total: valuTotal,
             });
           }
 
-          self.form.total = self.form.productos.reduce(
-            (acc, producto) => acc + producto.total,
-            0
-          );
+          self.form.total = self.form.productos.reduce((acc, producto) => {
+            // Multiplica por 100 para trabajar con enteros
+            let productoTotal = Math.round(producto.total * 100);
+            return acc + productoTotal;
+          }, 0);
 
-          self.form.total = self.form.total.toFixed(2);
+          self.form.total = self.form.total / 100;
 
-          self.form.saldo =
-            parseFloat(self.form.saldo_actual) - parseFloat(self.form.total);
+          self.form.total = parseFloat(self.form.total.toFixed(2));
 
-          self.form.saldo = self.form.saldo.toFixed(2);
+          let sald2 =
+            Math.round(self.form.saldo_actual * 100) -
+            Math.round(self.form.total * 100);
+
+          sald2 = sald2 / 100;
+
+          self.form.saldo = parseFloat(sald2.toFixed(2));
 
           self.product = {
             id: "",
@@ -758,6 +894,7 @@ export default {
           self.cardFlag = false;
         })
         .catch((error) => {
+          self.isDisabled = false;
           self.triggerNegative(error);
         });
     },
@@ -766,32 +903,48 @@ export default {
 
       // parseInt(data.cantidad) > 0 &&
       if (parseInt(data.cantidad) == 0) {
-        self.triggerNegative("La cantidad debe ser mayor a 1");
+        self.triggerNegative("La cantidad debe ser mayor a cero");
+
         return;
       }
       if (parseInt(data.cantidad) > parseInt(data.stock)) {
         self.triggerNegative("La cantidad debe ser menor o igual al Stock");
+
         return;
       }
 
-      let total = self.form.productos.reduce(
-        (acc, producto) => acc + producto.total,
-        0
-      );
+      let total = self.form.productos.reduce((acc, producto) => {
+        // Multiplica por 100 para trabajar con enteros
+        let productoTotal = Math.round(producto.total * 100);
+        return acc + productoTotal;
+      }, 0);
 
-      total += parseFloat(data.cantidad) * data.precio;
+      total = parseFloat(total.toFixed(2));
 
-      if (total > self.form.saldo_actual) {
+      let tvalue = parseFloat(data.cantidad) * parseFloat(data.precio);
+      tvalue = parseFloat(tvalue.toFixed(2));
+      tvalue = Math.round(tvalue * 100);
+      total += tvalue;
+
+      total = total / 100;
+
+      total = parseFloat(total.toFixed(2));
+
+      if (
+        parseFloat(total) >
+        parseFloat(parseFloat(self.form.saldo_actual).toFixed(2))
+      ) {
         self.triggerNegative("No tiene suficiente saldo");
         return;
       }
 
-      let online = navigator.onLine;
-      //CAMBIAR
-      if (!online) {
+      self.isDisabled = true;
+
+      if (self.online) {
         this.$axios
           .get(`api/cambio-stock-producto/${data.id}/${data.cantidad}/1`)
           .then((response) => {
+            self.isDisabled = false;
             let existingProduct = self.form.productos.find(
               (producto) => producto.producto_id === data.id
             );
@@ -799,33 +952,47 @@ export default {
             if (existingProduct) {
               // Si el producto ya existe, actualizar cantidad y total
               existingProduct.cantidad =
-                parseFloat(existingProduct.cantidad) +
-                parseFloat(data.cantidad); // Sumar la nueva cantidad
+                parseInt(existingProduct.cantidad) + parseInt(data.cantidad); // Sumar la nueva cantidad
               existingProduct.total =
-                existingProduct.cantidad * existingProduct.precio; // Recalcular el total
+                parseFloat(existingProduct.cantidad) *
+                parseFloat(existingProduct.precio); // Recalcular el total
+              existingProduct.total = Math.round(existingProduct.total * 100);
+              existingProduct.total = parseFloat(
+                (existingProduct.total / 100).toFixed(2)
+              );
             } else {
               // Si el producto no existe, agregarlo a la lista
+              let valuTotal = Math.round(data.precio * 100) * data.cantidad;
+
+              valuTotal = parseFloat((valuTotal / 100).toFixed(2));
+
               self.form.productos.push({
                 producto_id: data.id,
                 nombre: data.nombre,
                 img: data.img,
                 cantidad: data.cantidad,
                 precio: data.precio,
-                total: parseFloat(data.cantidad) * parseFloat(data.precio),
+                total: valuTotal,
               });
             }
 
-            self.form.total = self.form.productos.reduce(
-              (acc, producto) => acc + producto.total,
-              0
-            );
+            self.form.total = self.form.productos.reduce((acc, producto) => {
+              // Multiplica por 100 para trabajar con enteros
+              let productoTotal = Math.round(producto.total * 100);
+              return acc + productoTotal;
+            }, 0);
 
-            self.form.total = self.form.total.toFixed(2);
+            self.form.total = self.form.total / 100;
 
-            self.form.saldo =
-              parseFloat(self.form.saldo_actual) - parseFloat(self.form.total);
+            self.form.total = parseFloat(self.form.total.toFixed(2));
 
-            self.form.saldo = self.form.saldo.toFixed(2);
+            let sald2 =
+              Math.round(self.form.saldo_actual * 100) -
+              Math.round(self.form.total * 100);
+
+            sald2 = sald2 / 100;
+
+            self.form.saldo = parseFloat(sald2.toFixed(2));
 
             self.product = {
               id: "",
@@ -837,14 +1004,23 @@ export default {
             };
             self.cardFlag = false;
           })
-          .catch(() => {
-            self.triggerNegative("Ha ocurrido un error al agregar el producto");
+          .catch((error) => {
+            console.log(error);
+            self.isDisabled = false;
+            if (error.response && error.response.data) {
+              if (error.response.status === 409) {
+                self.triggerNegative(`${error.response.data.message}`);
+              }
+            } else {
+              self.triggerNegative(
+                "Ha ocurrido un error al agregar el producto"
+              );
+            }
           });
       } else {
         self.databaseLocalAddProducts(data);
       }
     },
-
     dataBaseLocalDeleteProduct(data, indice) {
       let self = this;
       let args = {
@@ -855,52 +1031,162 @@ export default {
       ipcRenderer
         .invoke("cambio-stock-producto", args)
         .then((response) => {
+          self.isDisabled = false;
           self.form.productos.splice(indice, 1);
 
-          self.form.total = self.form.productos.reduce(
-            (acc, producto) => acc + producto.total,
-            0
-          );
+          self.form.total = self.form.productos.reduce((acc, producto) => {
+            // Multiplica por 100 para trabajar con enteros
+            let productoTotal = Math.round(producto.total * 100);
+            return acc + productoTotal;
+          }, 0);
 
-          self.form.total = self.form.total.toFixed(2);
+          self.form.total = self.form.total / 100;
+          self.form.total = parseFloat(self.form.total.toFixed(2));
 
-          self.form.saldo =
-            parseFloat(self.form.saldo_actual) - parseFloat(self.form.total);
-          self.form.saldo = self.form.saldo.toFixed(2);
+          let r =
+            Math.round(self.form.saldo_actual * 100) -
+            Math.round(self.form.total * 100);
+          r = r / 100;
+          r = parseFloat(r.toFixed(2));
+          self.form.saldo = r;
         })
         .catch((error) => {
+          self.isDisabled = false;
           self.triggerNegative(error);
+        });
+    },
+    databaseLocalDeleteDetailRequested(data, indice) {
+      let self = this;
+      let args = {
+        id: data.id,
+        producto_id: data.producto_id,
+        cantidad: data.cantidad,
+      };
+      ipcRenderer
+        .invoke("eliminar-pedido-detalle", args)
+        .then((response) => {
+          console.log("assagsgf");
+          if (!response.data.success) {
+            // Maneja el error aquí si success es false
+            let error = new Error("Error en la solicitud");
+            let { data } = response;
+            error.data = data;
+            throw error;
+          }
+          self.isDisabled = false;
+          self.form.productos.splice(indice, 1);
+
+          self.form.total = self.form.productos.reduce((acc, producto) => {
+            // Multiplica por 100 para trabajar con enteros
+            let productoTotal = Math.round(producto.total * 100);
+            return acc + productoTotal;
+          }, 0);
+
+          self.form.total = self.form.total / 100;
+          self.form.total = parseFloat(self.form.total.toFixed(2));
+
+          let r =
+            Math.round(self.form.saldo_actual * 100) -
+            Math.round(self.form.total * 100);
+          r = r / 100;
+          r = parseFloat(r.toFixed(2));
+          self.form.saldo = r;
+        })
+        .catch((error) => {
+          self.isDisabled = false;
+          if (error.data) {
+            if (error.data.status === 409) {
+              self.triggerNegative(`${error.data.message}`);
+            } else {
+              self.triggerNegative(`${error.data.message}`);
+            }
+          } else {
+            self.triggerNegative("Ha ocurrido un error al eliminar");
+          }
         });
     },
     deleteProduct(data, indice) {
       let self = this;
+      self.isDisabled = true;
+      if (data.id) {
+        if (self.online) {
+          this.$axios
+            .get(
+              `api/eliminar-pedido-detalle/${data.id}/${data.producto_id}/${data.cantidad}/2`
+            )
+            .then((response) => {
+              self.isDisabled = false;
+              self.form.productos.splice(indice, 1);
 
-      let online = navigator.onLine;
-      //CAMBIAR
-      if (!online) {
-        this.$axios
-          .get(
-            `api/cambio-stock-producto/${data.producto_id}/${data.cantidad}/2`
-          )
-          .then((response) => {
-            self.form.productos.splice(indice, 1);
+              self.form.total = self.form.productos.reduce((acc, producto) => {
+                // Multiplica por 100 para trabajar con enteros
+                let productoTotal = Math.round(producto.total * 100);
+                return acc + productoTotal;
+              }, 0);
 
-            self.form.total = self.form.productos.reduce(
-              (acc, producto) => acc + producto.total,
-              0
-            );
+              self.form.total = self.form.total / 100;
+              self.form.total = parseFloat(self.form.total.toFixed(2));
 
-            self.form.total = self.form.total.toFixed(2);
-
-            self.form.saldo =
-              parseFloat(self.form.saldo_actual) - parseFloat(self.form.total);
-            self.form.saldo = self.form.saldo.toFixed(2);
-          })
-          .catch(() => {
-            self.triggerNegative("Ha ocurrido un error al eliminar");
-          });
+              let r =
+                Math.round(self.form.saldo_actual * 100) -
+                Math.round(self.form.total * 100);
+              r = r / 100;
+              r = parseFloat(r.toFixed(2));
+              self.form.saldo = r;
+            })
+            .catch((error) => {
+              self.isDisabled = false;
+              console.log(error);
+              if (error.response && error.response.data) {
+                if (error.response.status === 409) {
+                  self.triggerNegative(`${error.response.data.message}`);
+                }
+              } else {
+                self.triggerNegative("Ha ocurrido un error al eliminar");
+              }
+            });
+        } else {
+          self.databaseLocalDeleteDetailRequested(data, indice);
+        }
       } else {
-        self.dataBaseLocalDeleteProduct(data, indice);
+        if (self.online) {
+          this.$axios
+            .get(
+              `api/cambio-stock-producto/${data.producto_id}/${data.cantidad}/2`
+            )
+            .then((response) => {
+              self.isDisabled = false;
+              self.form.productos.splice(indice, 1);
+
+              self.form.total = self.form.productos.reduce(
+                (acc, producto) => acc + producto.total,
+                0
+              );
+
+              self.form.total = parseFloat(
+                parseFloat(self.form.total).toFixed(2)
+              );
+
+              self.form.saldo =
+                parseFloat(self.form.saldo_actual) -
+                parseFloat(self.form.total);
+              self.form.saldo = parseFloat(
+                parseFloat(self.form.saldo).toFixed(2)
+              );
+            })
+            .catch((error) => {
+              self.isDisabled = false;
+              if (error.response && error.response.data) {
+                if (error.response.status === 409) {
+                  self.triggerNegative(`${error.response.data.message}`);
+                }
+              } else {
+                self.triggerNegative("Ha ocurrido un error al eliminar");
+              }
+            });
+        } else {
+          self.dataBaseLocalDeleteProduct(data, indice);
+        }
       }
     },
     clearForm() {
@@ -919,12 +1205,24 @@ export default {
         iva: 0.0,
       };
     },
-    saveSale() {
+    databaseLocalSaveSale() {
       let self = this;
-      self.isDisabled = true;
-      this.$axios
-        .post(`api/venta-encabezados`, { ...self.form })
-        .then(({ data }) => {
+      let productos = JSON.parse(JSON.stringify(self.form.productos));
+      let form = {
+        ...self.form,
+        productos,
+      };
+      ipcRenderer
+        .invoke("ventas-encabezados-store", form)
+        .then((response) => {
+          self.block = false;
+          if (!response.data.success) {
+            // Maneja el error aquí si success es false
+            let error = new Error("Error en la solicitud");
+            let { data } = response;
+            error.data = data;
+            throw error;
+          }
           self.getClients();
           self.getProducts();
           self.getSavedOrders();
@@ -934,26 +1232,71 @@ export default {
           self.printReceipt(receiptContent);
 
           self.clearForm();
-          self.isDisabled = false;
         })
         .catch((error) => {
-          self.isDisabled = false;
-          if (error.response && error.response.data) {
+          self.block = false;
+          if (error.data) {
             //Devuelvo todos los productos
             // Esto debo cabiar porque solo si tiene el ID comienzo a devolevr
-            if (error.response.status === 409) {
+            if (error.data.status === 409) {
               self.form.productos = [];
               self.form.descuento = 0.0;
               self.form.subtotal_iva = 0.0;
               self.form.subtotal = 0.0;
               self.form.total = 0.0;
               self.form.iva = 0.0;
-              self.triggerNegative(`${error.response.data.message}`);
+              self.triggerNegative(`${error.data.message}`);
+            } else {
+              self.triggerNegative(`${error.data.message}`);
             }
           } else {
             self.triggerNegative("Ocurrió un error inesperado.");
           }
         });
+    },
+    async saveSale() {
+      this.block = true;
+      let self = this;
+      if (self.form.productos.length > 0) {
+        if (self.online) {
+          await this.$axios
+            .post(`api/venta-encabezados`, { ...self.form })
+            .then(({ data }) => {
+              self.getClients();
+              self.getProducts();
+              self.getSavedOrders();
+              self.triggerPositive("Venta Guardada");
+              // Generar el recibo y enviarlo a la impresora
+              const receiptContent = self.generateReceipt(self.form);
+              self.printReceipt(receiptContent);
+
+              self.clearForm();
+            })
+            .catch((error) => {
+              if (error.response && error.response.data) {
+                //Devuelvo todos los productos
+                // Esto debo cabiar porque solo si tiene el ID comienzo a devolevr
+                if (error.response.status === 409) {
+                  self.form.productos = [];
+                  self.form.descuento = 0.0;
+                  self.form.subtotal_iva = 0.0;
+                  self.form.subtotal = 0.0;
+                  self.form.total = 0.0;
+                  self.form.iva = 0.0;
+                  self.triggerNegative(`${error.response.data.message}`);
+                }
+              } else {
+                self.triggerNegative("Ocurrió un error inesperado.");
+              }
+            });
+          this.block = false;
+        } else {
+          self.databaseLocalSaveSale();
+        }
+      } else {
+        self.triggerNegative("Debe seleccionar por lo mínimo un producto.");
+        this.block = false;
+      }
     },
     generateReceipt(data) {
       var detalle = data.productos.map((producto) => {
@@ -965,17 +1308,17 @@ export default {
       });
       var detalleHTML = detalle.join("").toString();
       var html = `
-        <div>
-          <h2>Recibo de Entrega</h2>
+        <div style="font-size:10px;">
+          <h4>Recibo de Entrega</h4>
           <p>Cliente: ${data.nombre_completo}</p>
           <p>Saldo Actual: ${data.saldo}</p>
           <p>Fecha: ${new Date().toLocaleString()}</p>
-          <table>
+          <table style="font-size:10px">
             <thead>
               <tr>
-                <th>Producto</th>
-                <th>Cantidad</th>
-                <th>Precio</th>
+                <th>producto</th>
+                <th>cant</th>
+                <th>pre</th>
                 <th>Total</th>
               </tr>
             </thead>
@@ -991,74 +1334,178 @@ export default {
 
       return html;
     },
+    databaseLocalSaveStore() {
+      let self = this;
+      let productos = JSON.parse(JSON.stringify(self.form.productos));
+      let form = {
+        ...self.form,
+        productos,
+      };
+      ipcRenderer
+        .invoke("pedidos-encabezados-store", form)
+        .then((response) => {
+          if (!response.data.success) {
+            // Maneja el error aquí si success es false
+            let error = new Error("Error en la solicitud");
+            let { data } = response;
+            error.data = data;
+            throw error;
+          }
+
+          self.getClients();
+          self.getProducts();
+          self.getSavedOrders();
+          self.triggerPositive("Guardado");
+          self.clearForm();
+          self.isDisabled = false;
+        })
+        .catch((error) => {
+          self.isDisabled = false;
+          if (error.data) {
+            //Devuelvo todos los productos
+            if (error.data.status === 409) {
+              self.form.productos = [];
+              self.form.descuento = 0.0;
+              self.form.subtotal_iva = 0.0;
+              self.form.subtotal = 0.0;
+              self.form.total = 0.0;
+              self.form.iva = 0.0;
+
+              self.modalSearchClient = false;
+
+              self.triggerNegative(`${error.data.message}`);
+            } else {
+              self.triggerNegative(`${error.data.message}`);
+            }
+          } else {
+            self.triggerNegative("Ocurrió un error inesperado.");
+          }
+        });
+    },
+    databaseLocalSaveUpdate() {
+      let self = this;
+      let productos = JSON.parse(JSON.stringify(self.form.productos));
+      let form = {
+        ...self.form,
+        productos,
+      };
+      ipcRenderer
+        .invoke("pedidos-encabezados-update", form)
+        .then((response) => {
+          if (!response.data.success) {
+            // Maneja el error aquí si success es false
+            let error = new Error("Error en la solicitud");
+            let { data } = response;
+            error.data = data;
+            throw error;
+          }
+          self.getClients();
+          self.getProducts();
+          self.getSavedOrders();
+          self.triggerPositive("Guardado");
+          self.clearForm();
+          self.isDisabled = false;
+        })
+        .catch((error) => {
+          self.isDisabled = false;
+          if (error.data) {
+            //Devuelvo todos los productos
+
+            //Debe Cambiar porque si tiene el id, debo devolver la diferencia de los productos que no esten
+            if (error.data.status === 409) {
+              self.form.productos = [];
+              self.form.descuento = 0.0;
+              self.form.subtotal_iva = 0.0;
+              self.form.subtotal = 0.0;
+              self.form.total = 0.0;
+              self.form.iva = 0.0;
+
+              self.modalSearchClient = false;
+              self.triggerNegative(`${error.data.message}`);
+            } else {
+              self.triggerNegative(`${error.data.message}`);
+            }
+          } else {
+            self.triggerNegative("Ocurrió un error inesperado.");
+          }
+        });
+    },
     save() {
       let self = this;
       self.isDisabled = true;
       if (self.form.productos.length > 0) {
         if (self.form.id) {
           //Verificar
-          this.$axios
-            .put(`api/pedidos-encabezados/${self.form.id}`, { ...self.form })
-            .then(({ data }) => {
-              self.getClients();
-              self.getProducts();
-              self.getSavedOrders();
-              self.triggerPositive("Guardado");
-              self.clearForm();
-              self.isDisabled = false;
-            })
-            .catch((error) => {
-              self.isDisabled = false;
-              if (error.response && error.response.data) {
-                //Devuelvo todos los productos
+          if (self.online) {
+            this.$axios
+              .put(`api/pedidos-encabezados/${self.form.id}`, { ...self.form })
+              .then(({ data }) => {
+                self.getClients();
+                self.getProducts();
+                self.getSavedOrders();
+                self.triggerPositive("Guardado");
+                self.clearForm();
+                self.isDisabled = false;
+              })
+              .catch((error) => {
+                self.isDisabled = false;
+                if (error.response && error.response.data) {
+                  //Devuelvo todos los productos
 
-                //Debe Cambiar porque si tiene el id, debo devolver la diferencia de los productos que no esten
-                if (error.response.status === 409) {
-                  self.form.productos = [];
-                  self.form.descuento = 0.0;
-                  self.form.subtotal_iva = 0.0;
-                  self.form.subtotal = 0.0;
-                  self.form.total = 0.0;
-                  self.form.iva = 0.0;
+                  //Debe Cambiar porque si tiene el id, debo devolver la diferencia de los productos que no esten
+                  if (error.response.status === 409) {
+                    self.form.productos = [];
+                    self.form.descuento = 0.0;
+                    self.form.subtotal_iva = 0.0;
+                    self.form.subtotal = 0.0;
+                    self.form.total = 0.0;
+                    self.form.iva = 0.0;
 
-                  self.modalSearchClient = false;
-                  self.triggerNegative(`${error.response.data.message}`);
+                    self.modalSearchClient = false;
+                    self.triggerNegative(`${error.response.data.message}`);
+                  }
+                } else {
+                  self.triggerNegative("Ocurrió un error inesperado.");
                 }
-              } else {
-                self.triggerNegative("Ocurrió un error inesperado.");
-              }
-            });
+              });
+          } else {
+            self.databaseLocalSaveUpdate();
+          }
         } else {
-          this.$axios
-            .post(`api/pedidos-encabezados`, { ...self.form })
-            .then(({ data }) => {
-              self.getClients();
-              self.getProducts();
-              self.getSavedOrders();
-              self.triggerPositive("Guardado");
-              self.clearForm();
-              self.isDisabled = false;
-            })
-            .catch((error) => {
-              self.isDisabled = false;
-              if (error.response && error.response.data) {
-                //Devuelvo todos los productos
-                if (error.response.status === 409) {
-                  self.form.productos = [];
-                  self.form.descuento = 0.0;
-                  self.form.subtotal_iva = 0.0;
-                  self.form.subtotal = 0.0;
-                  self.form.total = 0.0;
-                  self.form.iva = 0.0;
+          if (self.online) {
+            this.$axios
+              .post(`api/pedidos-encabezados`, { ...self.form })
+              .then(({ data }) => {
+                self.getClients();
+                self.getProducts();
+                self.getSavedOrders();
+                self.triggerPositive("Guardado");
+                self.clearForm();
+                self.isDisabled = false;
+              })
+              .catch((error) => {
+                self.isDisabled = false;
+                if (error.response && error.response.data) {
+                  //Devuelvo todos los productos
+                  if (error.response.status === 409) {
+                    self.form.productos = [];
+                    self.form.descuento = 0.0;
+                    self.form.subtotal_iva = 0.0;
+                    self.form.subtotal = 0.0;
+                    self.form.total = 0.0;
+                    self.form.iva = 0.0;
 
-                  self.modalSearchClient = false;
+                    self.modalSearchClient = false;
 
-                  self.triggerNegative(`${error.response.data.message}`);
+                    self.triggerNegative(`${error.response.data.message}`);
+                  }
+                } else {
+                  self.triggerNegative("Ocurrió un error inesperado.");
                 }
-              } else {
-                self.triggerNegative("Ocurrió un error inesperado.");
-              }
-            });
+              });
+          } else {
+            self.databaseLocalSaveStore();
+          }
         }
       } else {
         self.isDisabled = false;
@@ -1078,7 +1525,6 @@ export default {
   created() {
     this.getClients();
     this.getProducts();
-    //Pendiente
     this.getSavedOrders();
   },
   mounted() {},

@@ -6,33 +6,45 @@ class PedidoEncabezadoController {
     try {
       let orderHeaders = await db("pedidos_encabezados as pe")
         .select(
-          "pe.*",
+          "pe.id",
+          "pe.user_id",
+          "pe.cliente_id",
+          "pe.saldo",
+          "pe.iva",
+          "pe.total",
+          "pe.saldo_actual",
+          "pe.fecha",
           "c.nombres as client_nombres",
           "c.cedula as client_cedula",
           "c.valor as client_valor",
           "u.name as user_name",
-          "od.*",
+          "od.id as id_detalle",
+          "od.pedido_encabezado_id",
+          "od.producto_id",
+          "od.cantidad",
+          "od.precio",
+          "od.total as total_detalle",
           "p.nombre as product_nombre",
           "p.img as product_img"
         )
         .where("pe.estado", 1)
+        .andWhere("od.estado", 1)
         .leftJoin("users as u", "pe.user_id", "u.id")
         .leftJoin("clientes as c", "pe.cliente_id", "c.id")
-        .leftJoin("pedidos_detalles as od", "pe.id", "od.pedido_id")
+        .leftJoin("pedidos_detalles as od", "pe.id", "od.pedido_encabezado_id")
         .leftJoin("productos as p", "od.producto_id", "p.id")
         .orderBy("pe.created_at", "desc")
         .limit(20);
 
       let transformedOrders = orderHeaders.reduce((acc, order) => {
         let existingOrder = acc.find((o) => o.id === order.id);
-
         if (!existingOrder) {
           existingOrder = {
             ...order,
             nombre_completo: order.client_nombres,
             nombres: order.client_nombres,
             cedula: order.client_cedula,
-            saldo: order.client_valor,
+            saldo: order.saldo,
             total: order.total,
             subtotal_iva: 0,
             descuento: 0,
@@ -41,14 +53,18 @@ class PedidoEncabezadoController {
           acc.push(existingOrder);
         }
 
-        if (order.product_id) {
+        if (order.producto_id) {
           existingOrder.productos.push({
-            ...order,
+            id: order.id_detalle,
+            pedido_encabezado_id: order.pedido_encabezado_id,
+            producto_id: order.producto_id,
+            cantidad: order.cantidad,
+            precio: order.precio,
+            total: order.total_detalle,
             nombre: order.product_nombre,
             img: order.product_img,
           });
         }
-
         return acc;
       }, []);
 
@@ -60,13 +76,14 @@ class PedidoEncabezadoController {
   }
 
   async store(request) {
-    const trx = await db.transaction();
+    let trx = await db.transaction();
     request.user_id = 1;
     request.fecha = new Date().toISOString().split("T")[0];
     try {
       let orderHeaders = await trx("pedidos_encabezados")
         .where("cliente_id", request.cliente_id)
-        .where("estado", 1)
+        // .andWhere("replicado", 0)
+        .andWhere("estado", 1)
         .first();
 
       if (orderHeaders) {
@@ -74,50 +91,72 @@ class PedidoEncabezadoController {
           await productController.changeProductStockValue(
             detail.producto_id,
             detail.cantidad,
-            2
+            2,
+            trx
           );
 
           await trx.commit();
 
           return {
-            success: false,
-            message:
-              "La solicitud no puede ser procesada porque ya existe un registro de ese cliente.",
-            status: 409, // 409 Conflict
+            data: {
+              success: false,
+              message:
+                "La solicitud no puede ser procesada porque ya existe un registro de ese cliente.",
+              status: 409, // 409 Conflict
+            },
           };
         }
       }
 
-      orderHeaders = await trx("pedido_encabezados").insert(request);
-      // Crear detalles del pedido
-      const orderDetails = request.productos.map((detail) => ({
-        ...detail,
-        pedido_encabezado_id: orderHeader[0].id,
+      orderHeaders = await trx("pedidos_encabezados").insert(
+        {
+          user_id: request.user_id,
+          cliente_id: request.cliente_id,
+          saldo: request.saldo,
+          iva: request.iva,
+          total: request.total,
+          saldo_actual: request.saldo_actual,
+          fecha: request.fecha,
+        },
+        ["id"]
+      );
+
+      let orderDetails = request.productos.map((detail) => ({
+        pedido_encabezado_id: orderHeaders[0].id,
+        producto_id: detail.producto_id,
+        cantidad: detail.cantidad,
+        precio: detail.precio,
+        total: detail.total,
       }));
 
-      await trx("order_details").insert(orderDetails);
-
-      // Actualizar cliente
-      let client = await trx("clientes")
-        .where("id", orderHeader[0].cliente_id)
-        .first();
-
-      client.valor -= parseFloat(request.total);
-      await trx("clientes").where("id", client.id).update(client);
+      await trx("pedidos_detalles").insert(orderDetails);
 
       await trx.commit();
+
+      return {
+        data: {
+          success: true,
+          status: 200,
+          message: "Guardado con éxito.",
+        },
+      };
     } catch (error) {
       await trx.rollback();
-      console.error("Error fetching order headers:", error);
-      throw error;
+      return {
+        data: {
+          success: false,
+          message: error,
+          status: 500, // 409 Conflict
+        },
+      };
     }
   }
 
   async update(request, id) {
-    const trx = await db.transaction();
+    let trx = await db.transaction();
 
     try {
-      const orderHeader = await trx("pedido_encabezados")
+      let orderHeader = await trx("pedidos_encabezados")
         .where("id", id)
         .first();
       if (!orderHeader) {
@@ -130,7 +169,7 @@ class PedidoEncabezadoController {
       for (let detail of request.productos) {
         if (detail.id) {
           // Actualizar detalle existente
-          await trx("pedido_detalles").where("id", detail.id).update({
+          await trx("pedidos_detalles").where("id", detail.id).update({
             cantidad: detail.cantidad,
             precio: detail.precio,
             total: detail.total,
@@ -138,29 +177,18 @@ class PedidoEncabezadoController {
         } else {
           // Crear nuevo detalle
           detail.pedido_encabezado_id = orderHeader.id;
-          await trx("pedido_detalles").insert(detail);
+          await trx("pedidos_detalles").insert({
+            pedido_encabezado_id: detail.pedido_encabezado_id,
+            producto_id: detail.producto_id,
+            cantidad: detail.cantidad,
+            precio: detail.precio,
+            total: detail.total,
+          });
         }
       }
 
-      // Actualizar el valor del cliente
-      const client = await trx("clientes")
-        .where("id", orderHeader.cliente_id)
-        .first();
-      if (!client) {
-        throw new Error("Cliente no encontrado");
-      }
-      const totalProductos = request.productos.reduce(
-        (sum, prod) => sum + parseFloat(prod.total),
-        0
-      );
-      client.valor =
-        parseFloat(orderHeader.saldo_actual) - parseFloat(totalProductos);
-      await trx("clientes")
-        .where("id", client.id)
-        .update({ valor: client.valor });
-
       // Actualizar el encabezado del pedido
-      await trx("pedido_encabezados").where("id", id).update({
+      await trx("pedidos_encabezados").where("id", id).update({
         user_id: request.user_id,
         saldo_actual: request.saldo_actual,
         saldo: request.saldo,
@@ -173,17 +201,20 @@ class PedidoEncabezadoController {
       await trx.commit();
 
       return {
-        success: true,
-        message: "Transacción realizada con éxito.",
+        data: {
+          success: true,
+          status: 200,
+          message: "Guardado con éxito.",
+        },
       };
     } catch (error) {
       await trx.rollback();
-
       return {
-        success: false,
-        message: "Lo sentimos, algo ha ido mal, inténtelo de nuevo más tarde.",
-        error: error.message,
-        status: 500, // 500 Internal Server Error
+        data: {
+          success: false,
+          message: error,
+          status: 500, // 409 Conflict
+        },
       };
     }
   }
@@ -193,7 +224,7 @@ class PedidoEncabezadoController {
 
     try {
       // Obtener el encabezado del pedido
-      const orderHeaders = await trx("pedido_encabezados")
+      let orderHeaders = await trx("pedidos_encabezados")
         .where("id", id)
         .first();
       if (!orderHeaders) {
@@ -201,14 +232,13 @@ class PedidoEncabezadoController {
       }
 
       // Obtener los detalles del pedido
-      const ordersDetails = await trx("pedido_detalles")
+      let ordersDetails = await trx("pedidos_detalles")
         .where("pedido_encabezado_id", orderHeaders.id)
         .andWhere("estado", 1);
 
-      let totalRecover = 0;
       for (let detail of ordersDetails) {
         // Actualizar el stock del producto
-        const product = await trx("productos")
+        let product = await trx("productos")
           .where("id", detail.producto_id)
           .first();
         if (!product) {
@@ -218,24 +248,10 @@ class PedidoEncabezadoController {
         await trx("productos")
           .where("id", detail.producto_id)
           .update({ stock: product.stock });
-
-        totalRecover += parseFloat(detail.total);
       }
-
-      // Actualizar el cliente
-      const client = await trx("clientes")
-        .where("id", orderHeaders.cliente_id)
-        .first();
-      if (!client) {
-        throw new Error("Cliente no encontrado");
-      }
-      client.valor += parseFloat(totalRecover);
-      await trx("clientes")
-        .where("id", client.id)
-        .update({ valor: client.valor });
 
       // Actualizar el estado del encabezado del pedido
-      await trx("pedido_encabezados")
+      await trx("pedidos_encabezados")
         .where("id", orderHeaders.id)
         .update({ estado: 0 });
 
@@ -243,18 +259,22 @@ class PedidoEncabezadoController {
       await trx.commit();
 
       return {
-        success: true,
-        message: "Transacción realizada con éxito.",
+        data: {
+          success: true,
+          status: 200,
+          message: "Detalle del pedido eliminado y stock actualizado",
+        },
       };
     } catch (error) {
       // Revertir la transacción
       await trx.rollback();
 
       return {
-        success: false,
-        message: "Lo sentimos, algo ha ido mal, inténtelo de nuevo más tarde.",
-        error: error.message,
-        status: 500, // 500 Internal Server Error
+        data: {
+          success: false,
+          message: error,
+          status: 500, // 409 Conflict
+        },
       };
     }
   }
@@ -287,7 +307,8 @@ class PedidoEncabezadoController {
           trx,
           detail.producto_id,
           newAmount,
-          2
+          2,
+          trx
         );
       }
 
@@ -304,6 +325,50 @@ class PedidoEncabezadoController {
         success: false,
         message: "Lo sentimos, algo ha ido mal, inténtelo de nuevo más tarde.",
         status: 500, // 500 Internal Server Error
+      };
+    }
+  }
+
+  async deleteDetailRequested(id, idProduct, amount, type) {
+    const trx = await db.transaction();
+
+    try {
+      // Buscar el detalle del pedido
+      let orderDetail = await trx("pedidos_detalles").where("id", id).first();
+
+      if (!orderDetail) {
+        throw new Error("Detalle de pedido no encontrado");
+      }
+
+      // Actualizar el estado del detalle del pedido
+      await trx("pedidos_detalles").where("id", id).update({
+        estado: 0,
+      });
+
+      // Actualizar el stock del producto
+      await productController.changeProductStockValue(
+        idProduct,
+        amount,
+        type,
+        trx
+      );
+
+      await trx.commit();
+      return {
+        data: {
+          success: true,
+          status: 200,
+          message: "Detalle del pedido eliminado y stock actualizado",
+        },
+      };
+    } catch (error) {
+      await trx.rollback();
+      return {
+        data: {
+          success: false,
+          message: error,
+          status: 500, // 409 Conflict
+        },
       };
     }
   }

@@ -4,7 +4,9 @@ const { ipcMain, app, BrowserWindow } = require("electron");
 const knex = require("knex");
 const productController = require("./controllers/productoController");
 const clientesController = require("./controllers/clientesController");
+const pedidoEncabezadoController = require("./controllers/pedidoEncabezadoController");
 const { db, cloudDb } = require("./connections/db");
+const ventaEncabezadoController = require("./controllers/ventaEncabezadoController");
 
 // Inicializar la base de datos
 function initializeDatabase() {
@@ -219,12 +221,12 @@ function registerHandlers() {
     }
   });
 
-  ipcMain.handle("producto", async (event, args) => {
+  ipcMain.handle("producto-show", async (event, args) => {
     try {
       return await productController.show(args);
     } catch (err) {
       console.error("Error al obtener usuarios:", err);
-      return [];
+      return {};
     }
   });
 
@@ -233,7 +235,8 @@ function registerHandlers() {
       return await productController.changeProductStockValue(
         args.id,
         args.cantidad,
-        args.type
+        args.type,
+        db
       );
     } catch (err) {
       console.error("Error al obtener usuarios:", err);
@@ -249,6 +252,99 @@ function registerHandlers() {
     } catch (err) {
       console.error("Error al obtener usuarios:", err);
       return [];
+    }
+  });
+
+  //Pedido Encabezado
+
+  ipcMain.handle("pedidos-encabezados-store", async (event, args) => {
+    try {
+      // throw new Error("Error simulado");
+      return await pedidoEncabezadoController.store(args);
+    } catch (error) {
+      return {
+        data: {
+          success: false,
+          status: 500,
+          message: error,
+          error: error.message,
+        },
+      };
+    }
+  });
+
+  ipcMain.handle("pedidos-encabezados-get", async (event, args) => {
+    try {
+      return await pedidoEncabezadoController.index();
+    } catch (err) {
+      console.error("Error al obtener usuarios:", err);
+      return [];
+    }
+  });
+
+  ipcMain.handle("pedidos-encabezados-update", async (event, args) => {
+    try {
+      return await pedidoEncabezadoController.update(args, args.id);
+    } catch (err) {
+      return {
+        data: {
+          success: false,
+          status: 500,
+          message: error,
+          error: error.message,
+        },
+      };
+    }
+  });
+
+  ipcMain.handle("pedidos-encabezados-delete", async (event, args) => {
+    try {
+      return await pedidoEncabezadoController.destroy(args);
+    } catch (error) {
+      return {
+        data: {
+          success: false,
+          status: 500,
+          message: error,
+          error: error.message,
+        },
+      };
+    }
+  });
+
+  ipcMain.handle("eliminar-pedido-detalle", async (event, args) => {
+    try {
+      return await pedidoEncabezadoController.deleteDetailRequested(
+        args.id,
+        args.producto_id,
+        args.cantidad,
+        2
+      );
+    } catch (error) {
+      return {
+        data: {
+          success: false,
+          status: 500,
+          message: error,
+          error: error.message,
+        },
+      };
+    }
+  });
+
+  //Venta Encabezado Controller
+  ipcMain.handle("ventas-encabezados-store", async (event, args) => {
+    try {
+      return await ventaEncabezadoController.store(args);
+    } catch (err) {
+      return {
+        data: {
+          success: false,
+          status: 500,
+          message: error,
+          error: error.message,
+        },
+      };
     }
   });
 
