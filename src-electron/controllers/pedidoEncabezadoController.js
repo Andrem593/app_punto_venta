@@ -220,7 +220,7 @@ class PedidoEncabezadoController {
   }
 
   async destroy(id) {
-    const trx = await db.transaction();
+    let trx = await db.transaction();
 
     try {
       // Obtener el encabezado del pedido
@@ -284,14 +284,14 @@ class PedidoEncabezadoController {
    * type: 1 = disminuye, otro = 2 aumenta
    */
   async returnQuantityToProductStock(request) {
-    const trx = await db.transaction();
+    let trx = await db.transaction();
 
     try {
       for (let detail of request.productos) {
         let newAmount = detail.cantidad;
 
         if (request.id) {
-          const orderDetailAmount = await trx("pedido_detalles")
+          let orderDetailAmount = await trx("pedidos_detalles")
             .where({
               pedido_encabezado_id: request.id,
               producto_id: detail.producto_id,
@@ -315,16 +315,21 @@ class PedidoEncabezadoController {
       await trx.commit();
 
       return {
-        success: true,
-        message: "Transacción realizada con éxito.",
+        data: {
+          success: true,
+          status: 200,
+          message: "Transaccón realizado con éxito",
+        },
       };
     } catch (error) {
       await trx.rollback();
 
       return {
-        success: false,
-        message: "Lo sentimos, algo ha ido mal, inténtelo de nuevo más tarde.",
-        status: 500, // 500 Internal Server Error
+        data: {
+          success: false,
+          message: error,
+          status: 500, // 409 Conflict
+        },
       };
     }
   }

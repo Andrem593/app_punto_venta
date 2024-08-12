@@ -750,6 +750,41 @@ export default {
         self.databaseGetProductInformation(data);
       }
     },
+    databaseLocalGetCustomerData() {
+      let self = this;
+      let productos = JSON.parse(JSON.stringify(self.form.productos));
+      let form = {
+        ...self.form,
+        productos,
+      };
+      ipcRenderer
+        .invoke("devolver-cantidad-productos", form)
+        .then((response) => {
+          if (!response.data.success) {
+            // Maneja el error aquí si success es false
+            let error = new Error("Error en la solicitud");
+            let { data } = response;
+            error.data = data;
+            throw error;
+          }
+          self.form.productos = [];
+          self.form.descuento = 0.0;
+          self.form.subtotal_iva = 0.0;
+          self.form.subtotal = 0.0;
+          self.form.total = 0.0;
+          self.form.iva = 0.0;
+
+          self.modalSearchClient = false;
+          self.getSavedOrders();
+        })
+        .catch((error) => {
+          if (error.data) {
+            self.triggerNegative(`${error.data.message}`);
+          } else {
+            self.triggerNegative("Ocurrió un error inesperado.");
+          }
+        });
+    },
     getCustomerData(data) {
       let self = this;
       if (self.form.id) {
@@ -799,6 +834,7 @@ export default {
               }
             });
         } else {
+          self.databaseLocalGetCustomerData();
         }
       } else {
         self.form.productos = [];

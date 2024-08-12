@@ -181,6 +181,25 @@ function initializeDatabase() {
       });
     }
   });
+
+  db.schema.hasTable("movimientos_stock").then((exists) => {
+    if (!exists) {
+      return db.schema.createTable("movimientos_stock", (table) => {
+        table.increments("id").primary();
+        table.integer("pedido_detalle_id");
+        table.integer("producto_id").unsigned();
+        table.integer("cantidad");
+        //AGREGAR PRODUCTO; ELIMINAR PRODUCTO; DEVOLVER C:OUD PRODUCTO ; DEVOLVER LOCAL PRODUCTO;
+        table.string("tipo");
+        //AUEMNTAR STOCK ; DISMINUIR STOCK
+        table.string("accion");
+        table.integer("replicado").defaultTo(0);
+        table.integer("estado").defaultTo(1);
+        table.timestamps(true, true); // Agrega created_at y updated_at con valores por defecto
+        table.timestamp("deleted_at"); // Agrega deleted_at
+      });
+    }
+  });
 }
 
 // console.log("aahh");
@@ -332,6 +351,23 @@ function registerHandlers() {
     }
   });
 
+  //Falta Probar
+  ipcMain.handle("devolver-cantidad-productos", async (event, args) => {
+    try {
+      return await pedidoEncabezadoController.returnQuantityToProductStock(
+        args
+      );
+    } catch (error) {
+      return {
+        data: {
+          success: false,
+          status: 500,
+          message: error,
+          error: error.message,
+        },
+      };
+    }
+  });
   //Venta Encabezado Controller
   ipcMain.handle("ventas-encabezados-store", async (event, args) => {
     try {
