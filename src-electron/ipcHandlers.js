@@ -186,10 +186,10 @@ function initializeDatabase() {
     if (!exists) {
       return db.schema.createTable("movimientos_stock", (table) => {
         table.increments("id").primary();
-        table.integer("pedido_detalle_id");
+        // table.integer("pedido_detalle_id");
         table.integer("producto_id").unsigned();
         table.integer("cantidad");
-        //AGREGAR PRODUCTO; ELIMINAR PRODUCTO; DEVOLVER C:OUD PRODUCTO ; DEVOLVER LOCAL PRODUCTO;
+        //AGREGAR PRODUCTO; ELIMINAR PRODUCTO; DEVOLVER CLOUD PRODUCTO ; DEVOLVER LOCAL PRODUCTO;
         table.string("tipo");
         //AUEMNTAR STOCK ; DISMINUIR STOCK
         table.string("accion");

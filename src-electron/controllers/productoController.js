@@ -67,7 +67,10 @@ class ProductController {
         .where("id", idProduct)
         .update({ stock: product.stock });
 
-      console.log("ssgs");
+      let typeMessage = type == 1 ? "AGREGAR PRODUCTO" : "ELIMINAR PRODUCTO";
+      let action = type == 1 ? "DISMINUIR STOCK" : "AUMENTAR STOCK";
+
+      this.recordStockMovement(db, idProduct, amount, typeMessage, action);
 
       return {
         success: true,
@@ -85,6 +88,36 @@ class ProductController {
     }
   }
 
+  async recordStockMovement(db, producto_id, cantidad, tipo, accion) {
+    try {
+      //TIPO
+      //AGREGAR PRODUCTO; ELIMINAR PRODUCTO; DEVOLVER C:OUD PRODUCTO ; DEVOLVER LOCAL PRODUCTO;
+      //ACCION
+      //AUEMNTAR STOCK ; DISMINUIR STOCK
+      await db("movimientos_stock").insert({
+        pedido_detalle_id,
+        producto_id,
+        cantidad,
+        tipo,
+        accion,
+      });
+
+      return {
+        success: true,
+        message: "Stock actualizado correctamente.",
+        status: 200, // 200 OK
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: "Lo sentimos, algo ha ido mal, inténtelo de nuevo más tarde.",
+        error: error.message,
+        status: 500, // 500 Internal Server Error
+      };
+    }
+  }
+
+  //Envio los registros de a tabla
   async sendStockMovementsProducts(db) {
     let trx = await db.transaction();
     try {
@@ -110,14 +143,19 @@ class ProductController {
           }
 
           try {
-            await cloudDb("productos").where("id", product.id).update({
-              stock: product.stock,
-            });
-
-            await trx("movimientos_stock").where("id", detail.id).update({
-              replicado: 1,
-            });
-          } catch {}
+            let rowsAffected = cloudDb("productos")
+              .where("id", product.id)
+              .update({
+                stock: product.stock,
+              });
+            if (rowsAffected) {
+              await trx("movimientos_stock").where("id", detail.id).update({
+                replicado: 1,
+              });
+            }
+          } catch {
+            console.log("Error");
+          }
         }
       }
 
