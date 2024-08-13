@@ -103,6 +103,8 @@ function initializeDatabase() {
         table.float("total");
         table.float("saldo_actual");
         table.date("fecha");
+        table.integer("replicado").defaultTo(0);
+        table.integer("id_cloud").defaultTo(null);
         table.integer("estado").defaultTo(1);
         table.timestamps(true, true); // Agrega created_at y updated_at con valores por defecto
         table.timestamp("deleted_at"); // Agrega deleted_at
@@ -128,6 +130,7 @@ function initializeDatabase() {
         table.integer("cantidad");
         table.float("precio");
         table.float("total");
+        table.integer("id_cloud").defaultTo(null);
         table.integer("estado").defaultTo(1);
         table.timestamps(true, true); // Agrega created_at y updated_at con valores por defecto
         table.timestamp("deleted_at"); // Agrega deleted_at
@@ -186,7 +189,7 @@ function initializeDatabase() {
     if (!exists) {
       return db.schema.createTable("movimientos_stock", (table) => {
         table.increments("id").primary();
-        // table.integer("pedido_detalle_id");
+        table.integer("pedido_detalle_id");
         table.integer("producto_id").unsigned();
         table.integer("cantidad");
         //AGREGAR PRODUCTO; ELIMINAR PRODUCTO; DEVOLVER CLOUD PRODUCTO ; DEVOLVER LOCAL PRODUCTO;

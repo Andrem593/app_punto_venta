@@ -335,7 +335,7 @@ class PedidoEncabezadoController {
   }
 
   async deleteDetailRequested(id, idProduct, amount, type) {
-    const trx = await db.transaction();
+    let trx = await db.transaction();
 
     try {
       // Buscar el detalle del pedido
@@ -359,6 +359,113 @@ class PedidoEncabezadoController {
       );
 
       await trx.commit();
+      return {
+        data: {
+          success: true,
+          status: 200,
+          message: "Detalle del pedido eliminado y stock actualizado",
+        },
+      };
+    } catch (error) {
+      await trx.rollback();
+      return {
+        data: {
+          success: false,
+          message: error,
+          status: 500, // 409 Conflict
+        },
+      };
+    }
+  }
+
+  async sendToCloudOrder() {
+    let trx = await db.transaction();
+    try {
+      let orders = await db("pedidos_encabezados")
+        .select("*")
+        .where("replicado", 0)
+        .orderBy("id");
+
+      for (let detail of orders) {
+        if (detail.id_cloud === null) {
+          let orderHeaders = await trx("pedidos_encabezados").insert(
+            {
+              user_id: detail.user_id,
+              cliente_id: detail.cliente_id,
+              saldo: detail.saldo,
+              iva: detail.iva,
+              total: detail.total,
+              saldo_actual: detail.saldo_actual,
+              fecha: detail.fecha,
+            },
+            ["id"]
+          );
+          let pedidosDetalles = await db("pedidos_detalles").where(
+            "pedido_encabezado_id",
+            orderHeaders[0].id
+          );
+
+          for (let detailPed of pedidosDetalles) {
+            await trx("pedidos_detalles").insert({
+              pedido_encabezado_id: detail.id_cloud,
+              producto_id: detailPed.producto_id,
+              cantidad: detailPed.cantidad,
+              precio: detailPed.precio,
+              total: detailPed.total,
+            });
+          }
+        } else {
+          let pedidos_encabezados = await trx("pedidos_encabezados")
+            .select("*")
+            .where("id", detail.id_cloud)
+            .first();
+          if (pedidos_encabezados) {
+            await trx("pedidos_encabezados")
+              .where("id", detail.id_cloud)
+              .update({
+                user_id: detail.user_id,
+                cliente_id: detail.cliente_id,
+                saldo: detail.saldo,
+                iva: detail.iva,
+                total: detail.total,
+                saldo_actual: detail.saldo_actual,
+                fecha: detail.fecha,
+                estado: detail.estado,
+                created_at: detail.created_at,
+                updated_at: detail.updated_at,
+              });
+
+            let pedidosDetalles = await db("pedidos_detalles").where(
+              "pedido_encabezado_id",
+              detail.id
+            );
+
+            for (let detailPed of pedidosDetalles) {
+              if (detailPed.id_cloud === null) {
+                await trx("pedidos_detalles").insert({
+                  pedido_encabezado_id: detail.id_cloud,
+                  producto_id: detailPed.producto_id,
+                  cantidad: detailPed.cantidad,
+                  precio: detailPed.precio,
+                  total: detailPed.total,
+                });
+              } else {
+                await trx("pedidos_detalles")
+                  .where("id", detailPed.id_cloud)
+                  .update({
+                    producto_id: detailPed.producto_id,
+                    cantidad: detailPed.cantidad,
+                    precio: detailPed.precio,
+                    total: detailPed.total,
+                  });
+              }
+            }
+          }
+        }
+      }
+
+      await trx.commit();
+
       return {
         data: {
           success: true,
