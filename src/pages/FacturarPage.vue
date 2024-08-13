@@ -148,13 +148,13 @@
                   >
                     <template v-slot:body-cell-precio="props">
                       <q-td :props="props">
-                        ${{ props.row.precio.toFixed(2) }}
+                        ${{ props.row.precio }}
                         <!-- <q-input v-model="props.row.nombre" dense /> -->
                       </q-td>
                     </template>
                     <template v-slot:body-cell-total="props">
                       <q-td :props="props">
-                        ${{ props.row.total.toFixed(2) }}
+                        ${{ props.row.total }}
                         <!-- <q-input v-model="props.row.nombre" dense /> -->
                       </q-td>
                     </template>
@@ -245,7 +245,7 @@
             >
             <div class="col-auto row justify-end">
               <q-item-label class="col text-start" style="color: white"
-                ><strong>${{ form.total.toFixed(2) }}</strong></q-item-label
+                ><strong>${{ form.total }}</strong></q-item-label
               >
             </div>
           </div>
@@ -303,10 +303,10 @@
               class="custom-table"
             >
               <template v-slot:body-cell-precio="props">
-                <q-td :props="props"> ${{ props.row.precio.toFixed(2) }} </q-td>
+                <q-td :props="props"> ${{ props.row.precio }} </q-td>
               </template>
               <template v-slot:body-cell-total="props">
-                <q-td :props="props"> ${{ props.row.total.toFixed(2) }} </q-td>
+                <q-td :props="props"> ${{ props.row.total }} </q-td>
               </template>
               <template v-slot:body-cell-acciones="props">
                 <q-td :props="props">
