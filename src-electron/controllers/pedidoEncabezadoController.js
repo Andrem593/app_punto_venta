@@ -1,4 +1,4 @@
-const { db } = require("../connections/db");
+const { db, cloudDb } = require("../connections/db");
 const productController = require("./productoController");
 
 class PedidoEncabezadoController {
@@ -387,6 +387,7 @@ class PedidoEncabezadoController {
         .orderBy("id");
 
       for (let detail of orders) {
+        //Registros creados en el local
         if (detail.id_cloud === null) {
           let orderHeaders = await trx("pedidos_encabezados").insert(
             {
@@ -402,16 +403,19 @@ class PedidoEncabezadoController {
           );
           let pedidosDetalles = await db("pedidos_detalles").where(
             "pedido_encabezado_id",
-            orderHeaders[0].id
+            detail.id
           );
 
           for (let detailPed of pedidosDetalles) {
             await trx("pedidos_detalles").insert({
-              pedido_encabezado_id: detail.id_cloud,
+              pedido_encabezado_id: orderHeaders[0].id,
               producto_id: detailPed.producto_id,
               cantidad: detailPed.cantidad,
               precio: detailPed.precio,
               total: detailPed.total,
+              estado: detailPed.estado,
+              created_at: detailPed.created_at,
+              updated_at: detailPed.updated_at,
             });
           }
         } else {
@@ -448,6 +452,8 @@ class PedidoEncabezadoController {
                   cantidad: detailPed.cantidad,
                   precio: detailPed.precio,
                   total: detailPed.total,
+                  created_at: detailPed.created_at,
+                  updated_at: detailPed.updated_at,
                 });
               } else {
                 await trx("pedidos_detalles")
@@ -457,6 +463,8 @@ class PedidoEncabezadoController {
                     cantidad: detailPed.cantidad,
                     precio: detailPed.precio,
                     total: detailPed.total,
+                    created_at: detailPed.created_at,
+                    updated_at: detailPed.updated_at,
                   });
               }
             }
@@ -475,6 +483,91 @@ class PedidoEncabezadoController {
       };
     } catch (error) {
       await trx.rollback();
+      return {
+        data: {
+          success: false,
+          message: error,
+          status: 500, // 409 Conflict
+        },
+      };
+    }
+  }
+
+  async getCloudOrders() {
+    let trx = await db.transaction();
+    try {
+      let orderHeaderCloud = await cloudDb("pedidos_encabezados")
+        .where("estado", 1)
+        .select();
+
+      console.log(orderHeaderCloud);
+      console.log("sasg");
+      for (let order of orderHeaderCloud) {
+        console.log(order);
+        let orderHeaderLocal = await trx("pedidos_encabezados")
+          .where("id_cloud", order.id)
+          .andWhere("replicado", 0)
+          .first();
+
+        if (!orderHeaderLocal) {
+          let orderLocal = await trx("pedidos_encabezados").insert(
+            {
+              user_id: order.user_id,
+              cliente_id: order.cliente_id,
+              saldo: order.saldo,
+              subtotal: order.subtotal,
+              iva: order.iva,
+              total: order.total,
+              fecha: order.fecha,
+              estado: order.estado,
+              created_at: order.created_at,
+              updated_at: order.updated_at,
+              saldo_actual: order.saldo_actual,
+              id_cloud: order.id,
+            },
+            ["id"]
+          );
+
+          orderLocal = orderLocal[0];
+
+          let ordersDetailsCloud = await cloudDb("pedidos_detalles")
+            .select("*")
+            .where("pedido_encabezado_id", order.id);
+
+          for (let detail of ordersDetailsCloud) {
+            let detailLocal = await trx("pedidos_detalles")
+              .select("*")
+              .where("id_cloud", detail.id)
+              .first();
+
+            if (!detailLocal) {
+              await trx("pedidos_detalles").insert({
+                pedido_encabezado_id: orderLocal.id,
+                producto_id: detail.producto_id,
+                cantidad: detail.cantidad,
+                precio: detail.precio,
+                total: detail.total,
+                estado: detail.estado,
+                created_at: detail.created_at,
+                updated_at: detail.updated_at,
+                id_cloud: detail.id,
+              });
+            }
+          }
+        }
+      }
+
+      await trx.commit();
+      return {
+        data: {
+          success: true,
+          status: 200,
+          message: "Detalle del pedido eliminado y stock actualizado",
+        },
+      };
+    } catch (error) {
+      await trx.rollback();
+      console.log(error);
       return {
         data: {
           success: false,

@@ -55,21 +55,22 @@ function initializeDatabase() {
         table.string("nombres");
         table.float("valor");
         table.integer("estado").defaultTo(1);
-        table.timestamps(true, true); // Agrega created_at y updated_at con valores por defecto
+        table.timestamp("created_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
+        table.timestamp("updated_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
         table.timestamp("deleted_at").nullable(); // Agrega deleted_at
       });
     }
   });
 
-  db.schema.hasTable("clientes").then((exists) => {
-    if (exists) {
-      return db.schema.alterTable("clientes", function (table) {
-        table.timestamp("created_at").nullable().alter(); // Permitir nulos en 'created_at'
-        table.timestamp("updated_at").nullable().alter(); // Permitir nulos en 'updated_at'
-        table.timestamp("deleted_at").nullable().alter(); // Permitir nulos en 'deleted_at'
-      });
-    }
-  });
+  // db.schema.hasTable("clientes").then((exists) => {
+  //   if (exists) {
+  //     return db.schema.alterTable("clientes", function (table) {
+  //       table.timestamp("created_at").nullable().alter(); // Permitir nulos en 'created_at'
+  //       table.timestamp("updated_at").nullable().alter(); // Permitir nulos en 'updated_at'
+  //       table.timestamp("deleted_at").nullable().alter(); // Permitir nulos en 'deleted_at'
+  //     });
+  //   }
+  // });
 
   db.schema.hasTable("productos").then((exists) => {
     if (!exists) {
@@ -82,7 +83,8 @@ function initializeDatabase() {
         table.float("precio");
         table.float("stock");
         table.integer("estado").defaultTo(1);
-        table.timestamps(true, true); // Agrega created_at y updated_at con valores por defecto
+        table.timestamp("created_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
+        table.timestamp("updated_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
         table.timestamp("deleted_at"); // Agrega deleted_at
       });
     }
@@ -102,11 +104,13 @@ function initializeDatabase() {
         table.float("iva");
         table.float("total");
         table.float("saldo_actual");
+        table.float("subtotal");
         table.date("fecha");
         table.integer("replicado").defaultTo(0);
         table.integer("id_cloud").defaultTo(null);
         table.integer("estado").defaultTo(1);
-        table.timestamps(true, true); // Agrega created_at y updated_at con valores por defecto
+        table.timestamp("created_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
+        table.timestamp("updated_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
         table.timestamp("deleted_at"); // Agrega deleted_at
       });
     }
@@ -132,7 +136,8 @@ function initializeDatabase() {
         table.float("total");
         table.integer("id_cloud").defaultTo(null);
         table.integer("estado").defaultTo(1);
-        table.timestamps(true, true); // Agrega created_at y updated_at con valores por defecto
+        table.timestamp("created_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
+        table.timestamp("updated_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
         table.timestamp("deleted_at"); // Agrega deleted_at
       });
     }
@@ -154,7 +159,8 @@ function initializeDatabase() {
         table.float("saldo_actual");
         table.date("fecha");
         table.integer("estado").defaultTo(1);
-        table.timestamps(true, true); // Agrega created_at y updated_at con valores por defecto
+        table.timestamp("created_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
+        table.timestamp("updated_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
         table.timestamp("deleted_at"); // Agrega deleted_at
       });
     }
@@ -179,7 +185,8 @@ function initializeDatabase() {
         table.float("precio");
         table.float("total");
         table.integer("estado").defaultTo(1);
-        table.timestamps(true, true); // Agrega created_at y updated_at con valores por defecto
+        table.timestamp("created_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
+        table.timestamp("updated_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
         table.timestamp("deleted_at"); // Agrega deleted_at
       });
     }
@@ -198,7 +205,8 @@ function initializeDatabase() {
         table.string("accion");
         table.integer("replicado").defaultTo(0);
         table.integer("estado").defaultTo(1);
-        table.timestamps(true, true); // Agrega created_at y updated_at con valores por defecto
+        table.timestamp("created_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
+        table.timestamp("updated_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
         table.timestamp("deleted_at"); // Agrega deleted_at
       });
     }
@@ -499,9 +507,14 @@ async function replicateData() {
   // }
 }
 
+async function getCloudOrders() {
+  await pedidoEncabezadoController.getCloudOrders();
+}
+
 module.exports = {
   initializeDatabase,
   registerHandlers,
   printReceipt,
   replicateData,
+  getCloudOrders,
 };

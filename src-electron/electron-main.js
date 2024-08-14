@@ -6,6 +6,7 @@ const {
   initializeDatabase,
   registerHandlers,
   replicateData,
+  getCloudOrders,
 } = require("./ipcHandlers");
 
 // needed in case process is undefined under Linux
@@ -96,8 +97,12 @@ app.on("ready", async () => {
 
   //SE DEBE EJECUTAR EL REPLICADO CADA
   setInterval(async () => {
-    replicateData();
+    // replicateData();
   }, 300000); // 300000 ms = 5 minutos  5000
+
+  setInterval(async () => {
+    getCloudOrders();
+  }, 5000);
 
   // También puedes ejecutar la replicación inmediatamente al inicio
 });
