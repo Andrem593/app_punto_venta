@@ -29,6 +29,7 @@ class PedidoEncabezadoController {
         )
         .where("pe.estado", 1)
         .andWhere("od.estado", 1)
+        .andWhere("pe.replicado", 0)
         .leftJoin("users as u", "pe.user_id", "u.id")
         .leftJoin("clientes as c", "pe.cliente_id", "c.id")
         .leftJoin("pedidos_detalles as od", "pe.id", "od.pedido_encabezado_id")
@@ -82,7 +83,7 @@ class PedidoEncabezadoController {
     try {
       let orderHeaders = await trx("pedidos_encabezados")
         .where("cliente_id", request.cliente_id)
-        // .andWhere("replicado", 0)
+        .andWhere("replicado", 0)
         .andWhere("estado", 1)
         .first();
 
@@ -114,6 +115,7 @@ class PedidoEncabezadoController {
           cliente_id: request.cliente_id,
           saldo: request.saldo,
           iva: request.iva,
+          subtotal: request.subtotal,
           total: request.total,
           saldo_actual: request.saldo_actual,
           fecha: request.fecha,
@@ -379,43 +381,48 @@ class PedidoEncabezadoController {
   }
 
   async sendToCloudOrder() {
-    let trx = await db.transaction();
+    let trx = await cloudDb.transaction();
+    let localDb = await db.transaction();
     try {
-      let orders = await db("pedidos_encabezados")
-        .select("*")
+      let orders = await localDb("pedidos_encabezados")
         .where("replicado", 0)
         .orderBy("id");
 
       for (let detail of orders) {
         //Registros creados en el local
         if (detail.id_cloud === null) {
-          let orderHeaders = await trx("pedidos_encabezados").insert(
-            {
-              user_id: detail.user_id,
-              cliente_id: detail.cliente_id,
-              saldo: detail.saldo,
-              iva: detail.iva,
-              total: detail.total,
-              saldo_actual: detail.saldo_actual,
-              fecha: detail.fecha,
-            },
-            ["id"]
-          );
-          let pedidosDetalles = await db("pedidos_detalles").where(
+          let insertedId;
+
+          let result = await trx("pedidos_encabezados").insert({
+            user_id: detail.user_id,
+            cliente_id: detail.cliente_id,
+            saldo: detail.saldo,
+            iva: detail.iva,
+            subtotal: detail.subtotal,
+            total: detail.total,
+            saldo_actual: detail.saldo_actual,
+            fecha: detail.fecha,
+            estado: detail.estado,
+          });
+
+          insertedId = result[0]; // Asigna el ID insertado
+
+          let pedidosDetalles = await localDb("pedidos_detalles").where(
             "pedido_encabezado_id",
             detail.id
           );
 
           for (let detailPed of pedidosDetalles) {
             await trx("pedidos_detalles").insert({
-              pedido_encabezado_id: orderHeaders[0].id,
+              pedido_encabezado_id: insertedId,
               producto_id: detailPed.producto_id,
               cantidad: detailPed.cantidad,
               precio: detailPed.precio,
               total: detailPed.total,
               estado: detailPed.estado,
-              created_at: detailPed.created_at,
-              updated_at: detailPed.updated_at,
+            });
+            await localDb("pedidos_detalles").where("id", detailPed.id).update({
+              replicado: 1,
             });
           }
         } else {
@@ -423,6 +430,7 @@ class PedidoEncabezadoController {
             .select("*")
             .where("id", detail.id_cloud)
             .first();
+
           if (pedidos_encabezados) {
             await trx("pedidos_encabezados")
               .where("id", detail.id_cloud)
@@ -435,16 +443,15 @@ class PedidoEncabezadoController {
                 saldo_actual: detail.saldo_actual,
                 fecha: detail.fecha,
                 estado: detail.estado,
-                created_at: detail.created_at,
-                updated_at: detail.updated_at,
               });
 
-            let pedidosDetalles = await db("pedidos_detalles").where(
-              "pedido_encabezado_id",
-              detail.id
-            );
+            let pedidosDetalles = await localDb("pedidos_detalles")
+              .where("pedido_encabezado_id", detail.id)
+              .andWhere("replicado", 0);
+            console.log(pedidosDetalles);
 
             for (let detailPed of pedidosDetalles) {
+              console.log("gfffa ", detailPed);
               if (detailPed.id_cloud === null) {
                 await trx("pedidos_detalles").insert({
                   pedido_encabezado_id: detail.id_cloud,
@@ -452,8 +459,7 @@ class PedidoEncabezadoController {
                   cantidad: detailPed.cantidad,
                   precio: detailPed.precio,
                   total: detailPed.total,
-                  created_at: detailPed.created_at,
-                  updated_at: detailPed.updated_at,
+                  estado: detailPed.estado,
                 });
               } else {
                 await trx("pedidos_detalles")
@@ -463,16 +469,24 @@ class PedidoEncabezadoController {
                     cantidad: detailPed.cantidad,
                     precio: detailPed.precio,
                     total: detailPed.total,
-                    created_at: detailPed.created_at,
-                    updated_at: detailPed.updated_at,
+                    estado: detailPed.estado,
                   });
               }
+              await localDb("pedidos_detalles")
+                .where("id", detailPed.id)
+                .update({
+                  replicado: 1,
+                });
             }
           }
         }
+        await localDb("pedidos_encabezados").where("id", detail.id).update({
+          replicado: 1,
+        });
       }
 
       await trx.commit();
+      await localDb.commit();
 
       return {
         data: {
@@ -482,7 +496,9 @@ class PedidoEncabezadoController {
         },
       };
     } catch (error) {
+      console.log(error);
       await trx.rollback();
+      await localDb.rollback();
       return {
         data: {
           success: false,
@@ -499,11 +515,7 @@ class PedidoEncabezadoController {
       let orderHeaderCloud = await cloudDb("pedidos_encabezados")
         .where("estado", 1)
         .select();
-
-      console.log(orderHeaderCloud);
-      console.log("sasg");
       for (let order of orderHeaderCloud) {
-        console.log(order);
         let orderHeaderLocal = await trx("pedidos_encabezados")
           .where("id_cloud", order.id)
           .andWhere("replicado", 0)
@@ -538,6 +550,7 @@ class PedidoEncabezadoController {
             let detailLocal = await trx("pedidos_detalles")
               .select("*")
               .where("id_cloud", detail.id)
+              .andWhere("replicado", 0)
               .first();
 
             if (!detailLocal) {

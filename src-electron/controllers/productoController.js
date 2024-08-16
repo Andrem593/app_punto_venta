@@ -70,7 +70,17 @@ class ProductController {
       let typeMessage = type == 1 ? "AGREGAR PRODUCTO" : "ELIMINAR PRODUCTO";
       let action = type == 1 ? "DISMINUIR STOCK" : "AUMENTAR STOCK";
 
-      this.recordStockMovement(db, idProduct, amount, typeMessage, action);
+      let result = await this.recordStockMovement(
+        db,
+        idProduct,
+        amount,
+        typeMessage,
+        action,
+        null
+      );
+      if (!result.success) {
+        throw new Error(result.error);
+      }
 
       return {
         success: true,
@@ -78,7 +88,7 @@ class ProductController {
         status: 200, // 200 OK
       };
     } catch (error) {
-      console.log("Error");
+      console.log(error);
       return {
         success: false,
         message: "Lo sentimos, algo ha ido mal, inténtelo de nuevo más tarde.",
@@ -88,12 +98,20 @@ class ProductController {
     }
   }
 
-  async recordStockMovement(db, producto_id, cantidad, tipo, accion) {
+  async recordStockMovement(
+    db,
+    producto_id,
+    cantidad,
+    tipo,
+    accion,
+    pedido_detalle_id
+  ) {
     try {
       //TIPO
       //AGREGAR PRODUCTO; ELIMINAR PRODUCTO; DEVOLVER C:OUD PRODUCTO ; DEVOLVER LOCAL PRODUCTO;
       //ACCION
       //AUEMNTAR STOCK ; DISMINUIR STOCK
+      console.log(pedido_detalle_id, producto_id, cantidad, tipo, accion);
       await db("movimientos_stock").insert({
         pedido_detalle_id,
         producto_id,
@@ -108,6 +126,7 @@ class ProductController {
         status: 200, // 200 OK
       };
     } catch (error) {
+      console.log(error);
       return {
         success: false,
         message: "Lo sentimos, algo ha ido mal, inténtelo de nuevo más tarde.",

@@ -869,6 +869,13 @@ export default {
       ipcRenderer
         .invoke("cambio-stock-producto", args)
         .then((response) => {
+          console.log(response);
+          if (!response.success) {
+            let error = new Error("Error en la solicitud");
+            error.data = response;
+            throw error;
+          }
+          console.log(response);
           self.isDisabled = false;
           let existingProduct = self.form.productos.find(
             (producto) => producto.producto_id === data.id
@@ -931,7 +938,7 @@ export default {
         })
         .catch((error) => {
           self.isDisabled = false;
-          self.triggerNegative(error);
+          self.triggerNegative(`${error.data.error}`);
         });
     },
     addProducts(data) {

@@ -135,6 +135,7 @@ function initializeDatabase() {
         table.float("precio");
         table.float("total");
         table.integer("id_cloud").defaultTo(null);
+        table.integer("replicado").defaultTo(0);
         table.integer("estado").defaultTo(1);
         table.timestamp("created_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
         table.timestamp("updated_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
@@ -261,16 +262,25 @@ function registerHandlers() {
   });
 
   ipcMain.handle("cambio-stock-producto", async (event, args) => {
+    //ver la transaccion
+    let trx = await db.transaction();
     try {
-      return await productController.changeProductStockValue(
+      let result = await productController.changeProductStockValue(
         args.id,
         args.cantidad,
         args.type,
-        db
+        trx
       );
-    } catch (err) {
-      console.error("Error al obtener usuarios:", err);
-      return [];
+      await trx.commit();
+      return result;
+    } catch (error) {
+      await trx.rollback();
+      return {
+        success: false,
+        status: 500,
+        message: error,
+        error: error.message,
+      };
     }
   });
 
@@ -511,10 +521,15 @@ async function getCloudOrders() {
   await pedidoEncabezadoController.getCloudOrders();
 }
 
+async function sendToCloudOrder() {
+  await pedidoEncabezadoController.sendToCloudOrder();
+}
+
 module.exports = {
   initializeDatabase,
   registerHandlers,
   printReceipt,
   replicateData,
   getCloudOrders,
+  sendToCloudOrder,
 };

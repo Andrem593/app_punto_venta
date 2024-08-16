@@ -21,7 +21,7 @@ class VentaEncabezadoController {
         orderHeader = await trx("pedidos_encabezados")
           .where("cliente_id", request.cliente_id)
           .andWhere("estado", 1)
-          // .andWhere("replicado", 0)
+          .andWhere("replicado", 0)
           .first();
 
         if (orderHeader) {
@@ -125,6 +125,8 @@ class VentaEncabezadoController {
       };
     }
   }
+
+  //AL replicar la venta devbo replicar el valor del cliente
 }
 
 module.exports = new VentaEncabezadoController();
