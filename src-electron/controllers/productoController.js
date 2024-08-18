@@ -147,10 +147,9 @@ class ProductController {
         .orderBy("id");
 
       if (type === "DEVOLVER CLOUD PRODUCTO") {
-        console.log("Ingresa Aqui");
         query = query.andWhere("tipo", type);
       } else {
-        query = query.andWhere("tipo", "!=", type);
+        query = query.andWhere("tipo", "!=", "DEVOLVER CLOUD PRODUCTO");
       }
 
       let movements = await query;

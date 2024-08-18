@@ -12,6 +12,7 @@ class PedidoEncabezadoController {
           "pe.saldo",
           "pe.iva",
           "pe.total",
+          "pe.subtotal",
           "pe.saldo_actual",
           "pe.fecha",
           "c.nombres as client_nombres",
