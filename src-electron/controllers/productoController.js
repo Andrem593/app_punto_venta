@@ -137,64 +137,67 @@ class ProductController {
   }
 
   //Envio los registros de a tabla
-  async sendStockMovementsProducts(cloudDb, type) {
+  async sendStockMovementsProducts(type) {
     let trx = await cloudDb.transaction();
+    let localDb = await db.transaction();
     try {
-      let movements = await db("movimientos_stock")
-        .select("*")
+      let query = localDb("movimientos_stock")
         .where("estado", 1)
         .andWhere("replicado", 0)
-        .andWhere("tipo", type)
-        //ver el tipo
         .orderBy("id");
+
+      if (type === "DEVOLVER CLOUD PRODUCTO") {
+        console.log("Ingresa Aqui");
+        query = query.andWhere("tipo", type);
+      } else {
+        query = query.andWhere("tipo", "!=", type);
+      }
+
+      let movements = await query;
 
       for (let detail of movements) {
         let product = await trx("productos")
-          .select("*")
           .where("id", detail.producto_id)
           .first();
 
         if (product) {
           //Pedidos que quedaron en el aire
           if (type == "DEVOLVER CLOUD PRODUCTO") {
-            let pedidoDetalle = await trx("pedidos_detalles")
-              .select("*")
-              .where("id", detail.pedido_detalle_id)
-              .first();
+            if (detail.pedido_detalle_id === null) {
+              product.stock += parseInt(detail.cantidad);
+            } else {
+              let pedidoDetalle = await trx("pedidos_detalles")
+                .where("id", detail.pedido_detalle_id)
+                .first();
 
-            let cantidad = 0;
-            if (pedidoDetalle && pedidoDetalle.cantidad > movements.cantidad) {
-              cantidad =
-                parseInt(pedidoDetalle.cantidad) - parseInt(movements.cantidad);
-              product.stock += cantidad;
+              let cantidad = 0;
+              if (pedidoDetalle && detail.cantidad > pedidoDetalle.cantidad) {
+                cantidad =
+                  parseInt(detail.cantidad) - parseInt(pedidoDetalle.cantidad);
+                product.stock += cantidad;
+              }
             }
           } else {
-            if (product.accion == "AUMENTAR STOCK") {
+            if (detail.accion === "AUMENTAR STOCK") {
               product.stock += parseInt(detail.cantidad);
-            } else if (product.accion == "DISMINUIR STOCK") {
+            } else if (detail.accion === "DISMINUIR STOCK") {
               //SI llega a cero poner algo en el producto
               product.stock -= parseInt(detail.cantidad);
             }
           }
 
-          try {
-            let rowsAffected = cloudDb("productos")
-              .where("id", product.id)
-              .update({
-                stock: product.stock,
-              });
-            if (rowsAffected) {
-              await trx("movimientos_stock").where("id", detail.id).update({
-                replicado: 1,
-              });
-            }
-          } catch {
-            console.log("Error");
-          }
+          await trx("productos").where("id", product.id).update({
+            stock: product.stock,
+          });
+
+          await localDb("movimientos_stock").where("id", detail.id).update({
+            replicado: 1,
+          });
         }
       }
 
       await trx.commit();
+      await localDb.commit();
 
       return {
         data: {
@@ -204,7 +207,9 @@ class ProductController {
         },
       };
     } catch (error) {
+      console.log(error);
       await trx.rollback();
+      await localDb.rollback();
       return {
         data: {
           success: false,

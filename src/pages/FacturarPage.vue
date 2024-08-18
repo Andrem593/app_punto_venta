@@ -3,6 +3,7 @@
     <div class="row">
       <div class="col-sm-12 col-xs-12 col-md-8">
         <q-btn color="black" label="Pedidos Guardados" @click="openSave" />
+
         <q-separator spaced />
         <q-input v-model="searchProduct" class="text-h6">
           <template v-slot:prepend>
@@ -73,6 +74,12 @@
         <q-separator spaced />
       </div>
       <div class="col-sm-12 col-xs-12 col-md-4">
+        <q-toggle
+          :label="online ? 'ONLINE' : 'OFFLINE'"
+          color="green"
+          v-model="online"
+          @update:model-value="handleToggleChange"
+        />
         <div class="q-pa-md">
           <div class="justify-center">
             <q-card class="my-card" flat bordered>
@@ -553,6 +560,67 @@ export default {
     },
   },
   methods: {
+    handleToggleChange(value) {
+      let self = this;
+
+      if (value === false) {
+        let productos = JSON.parse(JSON.stringify(self.form.productos));
+        let form = {
+          productos,
+        };
+        ipcRenderer
+          .invoke("registar-movimiento", form)
+          .then((response) => {
+            if (!response.data.success) {
+              // Maneja el error aquí si success es false
+              let error = new Error("Error en la solicitud");
+              let { data } = response;
+              error.data = data;
+              throw error;
+            }
+
+            self.clearForm();
+
+            ipcRenderer.send("setGlobalVariable", value);
+            localStorage.removeItem("token");
+            localStorage.removeItem("user_id");
+            self.$router.push({ path: "/" });
+          })
+          .catch((error) => {
+            self.online = true;
+            if (error.data) {
+              self.triggerNegative(`${error.data.message}`);
+            } else {
+              self.triggerNegative("Ocurrió un error inesperado.");
+            }
+          });
+
+        // this.online = true;
+      } else {
+        if (self.form.id) {
+          self.triggerNegative(
+            "Ya existe un Pedido guardado con este cliente, por favor proceder a guardar nuevamente para cambiar a tipo ONLINE."
+          );
+          self.online = false;
+          return;
+        }
+
+        if (self.form.productos.length > 0) {
+          self.triggerNegative(
+            "Debe eliminar los Productos para cambiar a tipo ONLINE"
+          );
+          self.online = false;
+          return;
+        }
+        ipcRenderer.send("setGlobalVariable", value);
+        localStorage.removeItem("token");
+        localStorage.removeItem("user_id");
+        self.$router.push({ path: "/" });
+      }
+
+      console.log("El valor de 'online' ha cambiado:", value);
+      // Aquí puedes llamar a la función que desees
+    },
     recoverOrder(data, indice) {
       let self = this;
       self.form = { ...data };
@@ -620,7 +688,9 @@ export default {
     },
     getSavedOrders() {
       let self = this;
+      console.log(self.online);
       if (self.online) {
+        console.log("Ingresa");
         this.$axios
           .get(`api/pedidos-encabezados`)
           .then(({ data }) => {
@@ -1254,6 +1324,7 @@ export default {
       let form = {
         ...self.form,
         productos,
+        user_id: localStorage.getItem("user_id"),
       };
       ipcRenderer
         .invoke("ventas-encabezados-store", form)
@@ -1383,6 +1454,7 @@ export default {
       let form = {
         ...self.form,
         productos,
+        user_id: localStorage.getItem("user_id"),
       };
       ipcRenderer
         .invoke("pedidos-encabezados-store", form)
@@ -1431,6 +1503,7 @@ export default {
       let form = {
         ...self.form,
         productos,
+        user_id: localStorage.getItem("user_id"),
       };
       ipcRenderer
         .invoke("pedidos-encabezados-update", form)
@@ -1566,9 +1639,14 @@ export default {
     },
   },
   created() {
-    this.getClients();
-    this.getProducts();
-    this.getSavedOrders();
+    let self = this;
+    ipcRenderer.invoke("getGlobalVariable").then((value) => {
+      self.online = value;
+      console.log("Variable Global:", self.online);
+      this.getClients();
+      this.getProducts();
+      this.getSavedOrders();
+    });
   },
   mounted() {},
 };

@@ -78,7 +78,6 @@ class PedidoEncabezadoController {
 
   async store(request) {
     let trx = await db.transaction();
-    request.user_id = 1;
     request.fecha = new Date().toISOString().split("T")[0];
     try {
       let orderHeaders = await trx("pedidos_encabezados")
@@ -164,8 +163,6 @@ class PedidoEncabezadoController {
       if (!orderHeader) {
         throw new Error("Pedido no encontrado");
       }
-      //VCamviar el di
-      request.user_id = 1;
       request.fecha = new Date().toISOString().split("T")[0];
 
       for (let detail of request.productos) {
@@ -451,7 +448,6 @@ class PedidoEncabezadoController {
             console.log(pedidosDetalles);
 
             for (let detailPed of pedidosDetalles) {
-              console.log("gfffa ", detailPed);
               if (detailPed.id_cloud === null) {
                 await trx("pedidos_detalles").insert({
                   pedido_encabezado_id: detail.id_cloud,
@@ -460,6 +456,8 @@ class PedidoEncabezadoController {
                   precio: detailPed.precio,
                   total: detailPed.total,
                   estado: detailPed.estado,
+                  created_at: detailPed.created_at,
+                  updated_at: detailPed.updated_at,
                 });
               } else {
                 await trx("pedidos_detalles")
@@ -530,7 +528,7 @@ class PedidoEncabezadoController {
               subtotal: order.subtotal,
               iva: order.iva,
               total: order.total,
-              fecha: order.fecha,
+              fecha: order.fecha.toISOString().slice(0, 10),
               estado: order.estado,
               created_at: order.created_at,
               updated_at: order.updated_at,

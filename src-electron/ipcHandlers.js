@@ -7,6 +7,7 @@ const clientesController = require("./controllers/clientesController");
 const pedidoEncabezadoController = require("./controllers/pedidoEncabezadoController");
 const { db, cloudDb } = require("./connections/db");
 const ventaEncabezadoController = require("./controllers/ventaEncabezadoController");
+const loginController = require("./controllers/loginController");
 
 // Inicializar la base de datos
 function initializeDatabase() {
@@ -158,7 +159,9 @@ function initializeDatabase() {
         table.float("iva");
         table.float("total");
         table.float("saldo_actual");
+        table.float("subtotal");
         table.date("fecha");
+        table.integer("replicado").defaultTo(0);
         table.integer("estado").defaultTo(1);
         table.timestamp("created_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
         table.timestamp("updated_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
@@ -185,6 +188,7 @@ function initializeDatabase() {
         table.integer("cantidad");
         table.float("precio");
         table.float("total");
+        table.integer("replicado").defaultTo(0);
         table.integer("estado").defaultTo(1);
         table.timestamp("created_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
         table.timestamp("updated_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
@@ -372,6 +376,16 @@ function registerHandlers() {
     }
   });
 
+  // ipcMain.handle("getGlobalVariable", async (event, args) => {
+  //   console.log("Variable Global: ", online);
+  //   return online;
+  // });
+
+  // ipcMain.on("setGlobalVariable", (event, newValue) => {
+  //   online = newValue;
+  //   console.log("set glab: ", online);
+  // });
+
   //Falta Probar
   ipcMain.handle("devolver-cantidad-productos", async (event, args) => {
     try {
@@ -393,7 +407,56 @@ function registerHandlers() {
   ipcMain.handle("ventas-encabezados-store", async (event, args) => {
     try {
       return await ventaEncabezadoController.store(args);
-    } catch (err) {
+    } catch (error) {
+      return {
+        data: {
+          success: false,
+          status: 500,
+          message: error,
+          error: error.message,
+        },
+      };
+    }
+  });
+
+  ipcMain.handle("registar-movimiento", async (event, args) => {
+    try {
+      for (let detail of args.productos) {
+        console.log(detail);
+        await productController.recordStockMovement(
+          db,
+          detail.producto_id,
+          detail.cantidad,
+          "DEVOLVER CLOUD PRODUCTO",
+          "AUMENTAR STOCK",
+          detail.id
+        );
+      }
+      return {
+        data: {
+          success: true,
+          message: "Stock actualizado correctamente.",
+          status: 200, // 200 OK
+        },
+      };
+    } catch (error) {
+      console.log(error);
+      return {
+        data: {
+          success: false,
+          status: 500,
+          message: error,
+          error: error.message,
+        },
+      };
+    }
+  });
+
+  ipcMain.handle("login", async (event, args) => {
+    try {
+      return await loginController.login(args.email, args.password);
+    } catch (error) {
+      console.log(error);
       return {
         data: {
           success: false,
@@ -525,6 +588,15 @@ async function sendToCloudOrder() {
   await pedidoEncabezadoController.sendToCloudOrder();
 }
 
+async function sendToCloudSale() {
+  await ventaEncabezadoController.sendToCloudSale();
+}
+
+async function sendStockMovementsProducts() {
+  await productController.sendStockMovementsProducts("DEVOLVER CLOUD PRODUCTO");
+  await productController.sendStockMovementsProducts(null);
+}
+
 module.exports = {
   initializeDatabase,
   registerHandlers,
@@ -532,4 +604,6 @@ module.exports = {
   replicateData,
   getCloudOrders,
   sendToCloudOrder,
+  sendToCloudSale,
+  sendStockMovementsProducts,
 };

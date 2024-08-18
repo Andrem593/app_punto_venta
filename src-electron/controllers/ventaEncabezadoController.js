@@ -1,11 +1,10 @@
-const { db } = require("../connections/db");
+const { db, cloudDb } = require("../connections/db");
 
 const productController = require("./productoController");
 
 class VentaEncabezadoController {
   async store(request) {
     //Camviar
-    request.user_id = 1;
     request.fecha = new Date().toISOString().split("T")[0];
 
     let trx = await db.transaction();
@@ -55,6 +54,7 @@ class VentaEncabezadoController {
           cliente_id: request.cliente_id,
           saldo: request.saldo,
           iva: request.iva,
+          subtotal: request.subtotal,
           total: request.total,
           saldo_actual: request.saldo_actual,
           fecha: request.fecha,
@@ -127,6 +127,88 @@ class VentaEncabezadoController {
   }
 
   //AL replicar la venta devbo replicar el valor del cliente
+
+  async sendToCloudSale() {
+    let trx = await cloudDb.transaction();
+    let localDb = await db.transaction();
+    try {
+      let orders = await localDb("ventas_encabezados")
+        .where("replicado", 0)
+        .orderBy("id");
+
+      for (let detail of orders) {
+        //Registros creados en el local
+        let insertedId;
+
+        let result = await trx("ventas_encabezados").insert({
+          user_id: detail.user_id,
+          cliente_id: detail.cliente_id,
+          saldo: detail.saldo,
+          iva: detail.iva,
+          subtotal: detail.subtotal,
+          total: detail.total,
+          saldo_actual: detail.saldo_actual,
+          fecha: detail.fecha,
+          estado: detail.estado,
+          created_at: detail.created_at,
+          updated_at: detail.updated_at,
+        });
+
+        insertedId = result[0]; // Asigna el ID insertado
+
+        let pedidosDetalles = await localDb("ventas_detalles").where(
+          "venta_encabezado_id",
+          detail.id
+        );
+
+        for (let detailPed of pedidosDetalles) {
+          await trx("ventas_detalles").insert({
+            venta_encabezado_id: insertedId,
+            producto_id: detailPed.producto_id,
+            cantidad: detailPed.cantidad,
+            precio: detailPed.precio,
+            total: detailPed.total,
+            estado: detailPed.estado,
+            created_at: detailPed.created_at,
+            updated_at: detailPed.updated_at,
+          });
+          await localDb("ventas_detalles").where("id", detailPed.id).update({
+            replicado: 1,
+          });
+        }
+
+        await trx("clientes").where("id", detail.cliente_id).update({
+          valor: detail.saldo,
+        });
+
+        await localDb("ventas_encabezados").where("id", detail.id).update({
+          replicado: 1,
+        });
+      }
+
+      await trx.commit();
+      await localDb.commit();
+
+      return {
+        data: {
+          success: true,
+          status: 200,
+          message: "Detalle del pedido eliminado y stock actualizado",
+        },
+      };
+    } catch (error) {
+      console.log(error);
+      await trx.rollback();
+      await localDb.rollback();
+      return {
+        data: {
+          success: false,
+          message: error,
+          status: 500, // 409 Conflict
+        },
+      };
+    }
+  }
 }
 
 module.exports = new VentaEncabezadoController();
