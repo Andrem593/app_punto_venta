@@ -79,7 +79,7 @@ class ProductController {
         null
       );
       if (!result.success) {
-        throw new Error(result.error);
+        return result;
       }
 
       return {

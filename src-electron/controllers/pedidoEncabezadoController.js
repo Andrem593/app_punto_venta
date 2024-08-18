@@ -244,10 +244,22 @@ class PedidoEncabezadoController {
         if (!product) {
           throw new Error("Producto no encontrado");
         }
-        product.stock += parseFloat(detail.cantidad);
+        product.stock += parseInt(detail.cantidad);
         await trx("productos")
           .where("id", detail.producto_id)
           .update({ stock: product.stock });
+
+        let result = await productController.recordStockMovement(
+          trx,
+          detail.producto_id,
+          parseInt(detail.cantidad),
+          "ELIMINAR PRODUCTO",
+          "AUMENTAR STOCK",
+          null
+        );
+        if (!result.success) {
+          return result;
+        }
       }
 
       // Actualizar el estado del encabezado del pedido
@@ -427,6 +439,7 @@ class PedidoEncabezadoController {
           let pedidos_encabezados = await trx("pedidos_encabezados")
             .select("*")
             .where("id", detail.id_cloud)
+            .andWhere("estado", 1)
             .first();
 
           if (pedidos_encabezados) {
