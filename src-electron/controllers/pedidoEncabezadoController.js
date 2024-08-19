@@ -579,6 +579,50 @@ class PedidoEncabezadoController {
               });
             }
           }
+        } else {
+          await trx("pedidos_encabezados")
+            .where("id_cloud", order.id)
+            .andWhere("replicado", 0)
+            .update({
+              user_id: order.user_id,
+              cliente_id: order.cliente_id,
+              saldo: order.saldo,
+              subtotal: order.subtotal,
+              iva: order.iva,
+              total: order.total,
+              fecha: order.fecha.toISOString().slice(0, 10),
+              estado: order.estado,
+              created_at: order.created_at,
+              updated_at: order.updated_at,
+              saldo_actual: order.saldo_actual,
+            });
+
+          let ordersDetailsCloud = await cloudDb("pedidos_detalles").where(
+            "pedido_encabezado_id",
+            order.id
+          );
+
+          for (let detail of ordersDetailsCloud) {
+            let detailLocal = await trx("pedidos_detalles")
+              .where("id_cloud", detail.id)
+              .andWhere("replicado", 0)
+              .first();
+
+            if (detailLocal) {
+              await trx("pedidos_detalles")
+                .where("id_cloud", detail.id)
+                .andWhere("replicado", 0)
+                .update({
+                  producto_id: detail.producto_id,
+                  cantidad: detail.cantidad,
+                  precio: detail.precio,
+                  total: detail.total,
+                  estado: detail.estado,
+                  created_at: detail.created_at,
+                  updated_at: detail.updated_at,
+                });
+            }
+          }
         }
       }
 

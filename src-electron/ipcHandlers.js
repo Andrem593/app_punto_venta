@@ -37,6 +37,19 @@ function initializeDatabase() {
     }
   });
 
+  db.schema.hasTable("parametros").then((exists) => {
+    if (!exists) {
+      return db.schema.createTable("parametros", (table) => {
+        table.integer("id");
+        table.string("descripcion");
+        table.float("valor");
+        table.integer("estado");
+        table.timestamp("created_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
+        table.timestamp("updated_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
+      });
+    }
+  });
+
   db.schema.hasTable("pruebas").then((exists) => {
     if (!exists) {
       return db.schema.createTable("pruebas", (table) => {
@@ -526,7 +539,20 @@ async function fetchFilteredCloudData(element, table) {
       .limit(1); // límite de registros
 
     if (table == "productos") {
-      element.stock = Math.floor(element.stock * 0.1);
+      let porcentaje = await db("parametros")
+        .where("descripcion", "porcentaje")
+        .andWhere("estado", 1)
+        .first();
+
+      let porc = 10;
+
+      if (porcentaje) {
+        porc = parseFloat(porcentaje.valor);
+      }
+
+      porc = porc / 100;
+
+      element.stock = Math.floor(element.stock * porc);
     }
 
     if (data.length > 0) {
@@ -557,7 +583,7 @@ async function fetchFilteredCloudData(element, table) {
 
 async function replicateData() {
   //Replicacion de maestros
-  let tables = ["users", "clientes", "productos"];
+  let tables = ["parametros", "users", "clientes", "productos"];
 
   for (let index = 0; index < tables.length; index++) {
     let element = tables[index];
