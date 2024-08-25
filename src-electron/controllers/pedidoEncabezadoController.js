@@ -524,9 +524,13 @@ class PedidoEncabezadoController {
   async getCloudOrders() {
     let trx = await db.transaction();
     try {
-      let orderHeaderCloud = await cloudDb("pedidos_encabezados")
-        .where("estado", 1)
-        .select();
+      let orderHeaderCloud = await cloudDb("pedidos_encabezados");
+      //ver si se pone where
+      // .where(
+      //   "estado",
+      //   1
+      // );
+
       for (let order of orderHeaderCloud) {
         let orderHeaderLocal = await trx("pedidos_encabezados")
           .where("id_cloud", order.id)
