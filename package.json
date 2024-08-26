@@ -1,8 +1,8 @@
 {
   "name": "app-point-of-sale",
   "version": "0.0.1",
-  "description": "A Quasar Project",
-  "productName": "Quasar App",
+  "description": "punto de venta de SOLMARKET",
+  "productName": "Punto de Venta",
   "author": "mcardenasp2 <marco.cardenas1702@gmail.com>",
   "private": true,
   "scripts": {
