@@ -413,6 +413,8 @@ class PedidoEncabezadoController {
             saldo_actual: detail.saldo_actual,
             fecha: detail.fecha,
             estado: detail.estado,
+            created_at: detail.created_at,
+            updated_at: detail.updated_at,
           });
 
           insertedId = result[0]; // Asigna el ID insertado
@@ -430,6 +432,8 @@ class PedidoEncabezadoController {
               precio: detailPed.precio,
               total: detailPed.total,
               estado: detailPed.estado,
+              created_at: detailPed.created_at,
+              updated_at: detailPed.updated_at,
             });
             await localDb("pedidos_detalles").where("id", detailPed.id).update({
               replicado: 1,
@@ -439,7 +443,7 @@ class PedidoEncabezadoController {
           let pedidos_encabezados = await trx("pedidos_encabezados")
             .select("*")
             .where("id", detail.id_cloud)
-            .andWhere("estado", 1)
+            // .andWhere("estado", 1)
             .first();
 
           if (pedidos_encabezados) {
@@ -459,7 +463,6 @@ class PedidoEncabezadoController {
             let pedidosDetalles = await localDb("pedidos_detalles")
               .where("pedido_encabezado_id", detail.id)
               .andWhere("replicado", 0);
-            console.log(pedidosDetalles);
 
             for (let detailPed of pedidosDetalles) {
               if (detailPed.id_cloud === null) {
@@ -524,14 +527,43 @@ class PedidoEncabezadoController {
   async getCloudOrders() {
     let trx = await db.transaction();
     try {
-      let orderHeaderCloud = await cloudDb("pedidos_encabezados");
-      //ver si se pone where
-      // .where(
-      //   "estado",
-      //   1
-      // );
+      let fecha = new Date();
+      // Restar 7 días
+      fecha.setDate(fecha.getDate() - 7);
+      // Formatear la fecha en YYYY-MM-DD
+      let dia = String(fecha.getDate()).padStart(2, "0");
+      let mes = String(fecha.getMonth() + 1).padStart(2, "0"); // Los meses en JavaScript son 0-11
+      let anio = fecha.getFullYear();
 
+      let fechaFormateada = `${anio}-${mes}-${dia}`;
+
+      let orderHeaderCloud = await cloudDb("pedidos_encabezados").where(
+        "fecha",
+        ">=",
+        fechaFormateada
+      );
       for (let order of orderHeaderCloud) {
+        let createdAt = new Date(order.created_at);
+        // Formatear al formato "YYYY-MM-DD HH:MM:SS"
+        let formattedCreatedAt = `${createdAt.getFullYear()}-${String(
+          createdAt.getMonth() + 1
+        ).padStart(2, "0")}-${String(createdAt.getDate()).padStart(
+          2,
+          "0"
+        )} ${String(createdAt.getHours()).padStart(2, "0")}:${String(
+          createdAt.getMinutes()
+        ).padStart(2, "0")}:${String(createdAt.getSeconds()).padStart(2, "0")}`;
+
+        let updatedAt = new Date(order.updated_at);
+        // Formatear al formato "YYYY-MM-DD HH:MM:SS"
+        let formattedUpdateddAt = `${updatedAt.getFullYear()}-${String(
+          updatedAt.getMonth() + 1
+        ).padStart(2, "0")}-${String(updatedAt.getDate()).padStart(
+          2,
+          "0"
+        )} ${String(updatedAt.getHours()).padStart(2, "0")}:${String(
+          updatedAt.getMinutes()
+        ).padStart(2, "0")}:${String(updatedAt.getSeconds()).padStart(2, "0")}`;
         let orderHeaderLocal = await trx("pedidos_encabezados")
           .where("id_cloud", order.id)
           .andWhere("replicado", 0)
@@ -548,8 +580,8 @@ class PedidoEncabezadoController {
               total: order.total,
               fecha: order.fecha.toISOString().slice(0, 10),
               estado: order.estado,
-              created_at: order.created_at,
-              updated_at: order.updated_at,
+              created_at: createdAt,
+              updated_at: updatedAt,
               saldo_actual: order.saldo_actual,
               id_cloud: order.id,
             },
@@ -568,6 +600,33 @@ class PedidoEncabezadoController {
               .where("id_cloud", detail.id)
               .andWhere("replicado", 0)
               .first();
+            let createdAtDeta = new Date(detail.created_at);
+            // Formatear al formato "YYYY-MM-DD HH:MM:SS"
+            let formattedCreatedAtDeta = `${createdAtDeta.getFullYear()}-${String(
+              createdAtDeta.getMonth() + 1
+            ).padStart(2, "0")}-${String(createdAtDeta.getDate()).padStart(
+              2,
+              "0"
+            )} ${String(createdAtDeta.getHours()).padStart(2, "0")}:${String(
+              createdAtDeta.getMinutes()
+            ).padStart(2, "0")}:${String(createdAtDeta.getSeconds()).padStart(
+              2,
+              "0"
+            )}`;
+
+            let updatedAtDeta = new Date(detail.updated_at);
+            // Formatear al formato "YYYY-MM-DD HH:MM:SS"
+            let formattedUpdateddAtDeta = `${updatedAtDeta.getFullYear()}-${String(
+              updatedAtDeta.getMonth() + 1
+            ).padStart(2, "0")}-${String(updatedAtDeta.getDate()).padStart(
+              2,
+              "0"
+            )} ${String(updatedAtDeta.getHours()).padStart(2, "0")}:${String(
+              updatedAtDeta.getMinutes()
+            ).padStart(2, "0")}:${String(updatedAtDeta.getSeconds()).padStart(
+              2,
+              "0"
+            )}`;
 
             if (!detailLocal) {
               await trx("pedidos_detalles").insert({
@@ -577,8 +636,8 @@ class PedidoEncabezadoController {
                 precio: detail.precio,
                 total: detail.total,
                 estado: detail.estado,
-                created_at: detail.created_at,
-                updated_at: detail.updated_at,
+                created_at: formattedCreatedAtDeta,
+                updated_at: formattedUpdateddAtDeta,
                 id_cloud: detail.id,
               });
             }
@@ -596,8 +655,8 @@ class PedidoEncabezadoController {
               total: order.total,
               fecha: order.fecha.toISOString().slice(0, 10),
               estado: order.estado,
-              created_at: order.created_at,
-              updated_at: order.updated_at,
+              created_at: formattedCreatedAt,
+              updated_at: formattedUpdateddAt,
               saldo_actual: order.saldo_actual,
             });
 
@@ -607,6 +666,33 @@ class PedidoEncabezadoController {
           );
 
           for (let detail of ordersDetailsCloud) {
+            let createdAtDeta = new Date(detail.created_at);
+            // Formatear al formato "YYYY-MM-DD HH:MM:SS"
+            let formattedCreatedAtDeta = `${createdAtDeta.getFullYear()}-${String(
+              createdAtDeta.getMonth() + 1
+            ).padStart(2, "0")}-${String(createdAtDeta.getDate()).padStart(
+              2,
+              "0"
+            )} ${String(createdAtDeta.getHours()).padStart(2, "0")}:${String(
+              createdAtDeta.getMinutes()
+            ).padStart(2, "0")}:${String(createdAtDeta.getSeconds()).padStart(
+              2,
+              "0"
+            )}`;
+
+            let updatedAtDeta = new Date(detail.updated_at);
+            // Formatear al formato "YYYY-MM-DD HH:MM:SS"
+            let formattedUpdateddAtDeta = `${updatedAtDeta.getFullYear()}-${String(
+              updatedAtDeta.getMonth() + 1
+            ).padStart(2, "0")}-${String(updatedAtDeta.getDate()).padStart(
+              2,
+              "0"
+            )} ${String(updatedAtDeta.getHours()).padStart(2, "0")}:${String(
+              updatedAtDeta.getMinutes()
+            ).padStart(2, "0")}:${String(updatedAtDeta.getSeconds()).padStart(
+              2,
+              "0"
+            )}`;
             let detailLocal = await trx("pedidos_detalles")
               .where("id_cloud", detail.id)
               .andWhere("replicado", 0)
@@ -622,8 +708,8 @@ class PedidoEncabezadoController {
                   precio: detail.precio,
                   total: detail.total,
                   estado: detail.estado,
-                  created_at: detail.created_at,
-                  updated_at: detail.updated_at,
+                  created_at: formattedCreatedAtDeta,
+                  updated_at: formattedUpdateddAtDeta,
                 });
             }
           }
