@@ -8,6 +8,12 @@
         />
       </div>
       <div class="q-pa-md">
+        <q-toggle
+          :label="online ? 'ONLINE' : 'OFFLINE'"
+          color="green"
+          v-model="online"
+          @update:model-value="handleToggleChange"
+        />
         <q-form @submit="login">
           <div class="q-gutter-y-md column" style="max-width: 400px">
             <q-input
@@ -53,6 +59,7 @@
 <script>
 // import { ref } from "vue";
 // const { ipcRenderer } = require("electron");
+const { ipcRenderer } = require("electron");
 
 export default {
   data() {
@@ -62,12 +69,17 @@ export default {
         password: "",
       },
       users: [],
+      online: true,
     };
   },
   mounted() {
     // this.getUsers();
   },
   methods: {
+    handleToggleChange(value) {
+      let self = this;
+      ipcRenderer.send("setGlobalVariable", value);
+    },
     // async getUsers() {
     //   try {
     //     const users = await ipcRenderer.invoke("get-users");
@@ -91,25 +103,59 @@ export default {
     //       self.triggerNegative(error.error);
     //     });
     // },
+    databaseLocalLogin() {
+      let self = this;
+      let form = {
+        email: self.form.email,
+        password: self.form.password,
+      };
+      ipcRenderer
+        .invoke("login", form)
+        .then((response) => {
+          if (!response.data.success) {
+            // Maneja el error aquí si success es false
+            let error = new Error("Error en la solicitud");
+            let { data } = response;
+            error.data = data;
+            throw error;
+          }
+          localStorage.setItem("token", response.data.token);
+          localStorage.setItem("user_id", response.data.user_id);
+          self.triggerPositive("Correo Y password correctos");
+          self.$router.push({ path: "/principal" });
+          console.log(response);
+        })
+        .catch((error) => {
+          if (error.data) {
+            self.triggerNegative(`${error.data.message}`);
+          } else {
+            self.triggerNegative("Ocurrió un error inesperado.");
+          }
+        });
+    },
     async login() {
       let self = this;
       console.log(self.form);
 
-      try {
-        const response = await this.$axios.post("/api/login", {
-          email: self.form.email,
-          password: self.form.password,
-        });
-        console.log(response);
-        const token = response.data.access_token;
-        localStorage.setItem("token", token);
-        self.triggerPositive("Correo Y password correctos");
-        self.$router.push({ path: "/principal" });
-        // this.$router.push({ name: "home" });
-      } catch (error) {
-        self.triggerNegative("Usuario o contraseña incorrectos");
-        console.error(error);
-        // Handle login error
+      if (self.online) {
+        try {
+          const response = await this.$axios.post("/api/login", {
+            email: self.form.email,
+            password: self.form.password,
+          });
+          console.log(response);
+          const token = response.data.access_token;
+          localStorage.setItem("token", token);
+          self.triggerPositive("Correo Y password correctos");
+          self.$router.push({ path: "/principal" });
+          // this.$router.push({ name: "home" });
+        } catch (error) {
+          self.triggerNegative("Usuario o contraseña incorrectos");
+          console.error(error);
+          // Handle login error
+        }
+      } else {
+        self.databaseLocalLogin();
       }
     },
     async logout() {
@@ -134,6 +180,12 @@ export default {
         message: message,
       });
     },
+  },
+  created() {
+    let self = this;
+    ipcRenderer.invoke("getGlobalVariable").then((value) => {
+      self.online = value;
+    });
   },
 };
 </script>

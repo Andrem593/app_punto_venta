@@ -2,13 +2,27 @@ import { app, BrowserWindow, ipcMain } from "electron";
 import path from "path";
 import os from "os";
 
-const { initializeDatabase, registerHandlers } = require("./ipcHandlers");
+const {
+  initializeDatabase,
+  registerHandlers,
+  replicateData,
+  getCloudOrders,
+  sendToCloudOrder,
+  sendToCloudSale,
+  sendStockMovementsProducts,
+} = require("./ipcHandlers");
 
 // needed in case process is undefined under Linux
 const platform = process.platform || os.platform();
 
 let mainWindow;
 let db;
+let online = true;
+
+ipcMain.handle("getGlobalVariable", async (event, args) => {
+  console.log("Variable Global: ", online);
+  return online;
+});
 
 ipcMain.on("print-receipt", (event, receiptContent) => {
   const printWindow = new BrowserWindow();
@@ -51,7 +65,7 @@ function createWindow() {
   mainWindow.loadURL(process.env.APP_URL);
 
   mainWindow.maximize();
-  
+
   if (process.env.DEBUGGING) {
     // if on DEV or Production with debug enabled
     mainWindow.webContents.openDevTools();
@@ -83,6 +97,44 @@ app.on("activate", () => {
   if (mainWindow === null) {
     createWindow();
   }
+});
+
+// Función para replicar datos
+async function replicateAllData() {
+  // Aquí irían tus funciones de replicación
+  console.log("Iniciando replicación...");
+  await replicateData();
+
+  await sendToCloudSale();
+  await sendStockMovementsProducts();
+  await getCloudOrders();
+  console.log("Replicación finalizada.");
+}
+
+// Función que maneja el proceso de replicación con espera
+async function startReplicationCycle() {
+  await sendToCloudOrder();
+  while (online) {
+    await replicateAllData(); // Espera a que termine la replicación
+    // cada 5 segundos
+    await new Promise((resolve) => setTimeout(resolve, 5000)); // 30000 Espera 30 segundos
+  }
+}
+
+ipcMain.on("setGlobalVariable", (event, newValue) => {
+  online = newValue;
+  if (online) {
+    console.log("Conexión establecida, iniciando ciclo de replicación...");
+    //Solo envia cuando cambia a true
+    startReplicationCycle(); // Inicia el ciclo de replicación cuando `online` se pone en `true`
+  } else {
+    console.log("Conexión perdida, ciclo de replicación detenido.");
+  }
+  // mainWindow.webContents.send('globalVariableUpdated', globalVariable);
+});
+
+app.on("ready", async () => {
+  await startReplicationCycle();
 });
 
 export default db;
