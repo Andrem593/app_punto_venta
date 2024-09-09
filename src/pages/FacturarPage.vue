@@ -475,6 +475,8 @@ export default {
         id: "",
         cliente_id: "",
         nombre_completo: "",
+        lado: "",
+        etapa: "",
         cedula: "",
         saldo: 0.0,
         saldo_actual: 0.0,
@@ -553,7 +555,6 @@ export default {
       self.getProducts(value);
     },
     searchClient(value) {
-      console.log(value);
       let self = this;
       self.getClients(value);
     },
@@ -678,7 +679,6 @@ export default {
       ipcRenderer
         .invoke("pedidos-encabezados-get")
         .then((data) => {
-          console.log(data);
           self.pedidos_guardados = data;
         })
         .catch((error) => {
@@ -870,6 +870,8 @@ export default {
       self.form.id = "";
       self.form.cliente_id = data.id;
       self.form.nombre_completo = data.nombres;
+      self.form.etapa = data.stage?.nombre ?? "";
+      self.form.lado = data.lado;
       self.form.cedula = data.cedula;
       self.form.saldo = data.valor;
       self.form.saldo_actual = data.valor;
@@ -1304,6 +1306,8 @@ export default {
       self.form = {
         cliente_id: "",
         nombre_completo: "",
+        lado: "",
+        etapa: "",
         cedula: "",
         saldo: 0.0,
         saldo_actual: 0.0,
@@ -1422,6 +1426,8 @@ export default {
         <div style="font-size:10px;">
           <h4>Recibo de Entrega</h4>
           <p>Cliente: ${data.nombre_completo}</p>
+          <p>Etapa: ${data.etapa}</p>
+          <p>Lado: ${data.lado}</p>
           <p>Saldo Actual: ${data.saldo}</p>
           <p>Fecha: ${new Date().toLocaleString()}</p>
           <table style="font-size:10px">
