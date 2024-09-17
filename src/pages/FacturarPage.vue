@@ -920,6 +920,17 @@ export default {
         self.dataBaseLocalgetClients(nombres);
       }
     },
+    dataBaseLocalCostCenter(nombres) {
+      let self = this;
+      ipcRenderer
+        .invoke("get-cost-center", nombres)
+        .then((data) => {
+          self.clientes = data;
+        })
+        .catch((error) => {
+          self.triggerNegative(error);
+        });
+    },
     getCostCenter(nombres = null) {
       let self = this;
       let filtro = "";
@@ -936,6 +947,8 @@ export default {
           .catch((error) => {
             self.triggerNegative(error.error);
           });
+      } else {
+        self.dataBaseLocalCostCenter(nombres);
       }
     },
     getSubcategory(nombres = null) {

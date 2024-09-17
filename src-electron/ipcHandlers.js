@@ -8,6 +8,8 @@ const pedidoEncabezadoController = require("./controllers/pedidoEncabezadoContro
 const { db, cloudDb } = require("./connections/db");
 const ventaEncabezadoController = require("./controllers/ventaEncabezadoController");
 const loginController = require("./controllers/loginController");
+const subcategoriaController = require("./controllers/subcategoriaController");
+const centroDeCostoController = require("./controllers/centroDeCostoController");
 
 // Inicializar la base de datos
 function initializeDatabase() {
@@ -96,6 +98,32 @@ function initializeDatabase() {
         table.string("img");
         table.float("precio");
         table.float("stock");
+        table.integer("estado").defaultTo(1);
+        table.timestamp("created_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
+        table.timestamp("updated_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
+        table.timestamp("deleted_at"); // Agrega deleted_at
+      });
+    }
+  });
+  db.schema.hasTable("centro_de_costo").then((exists) => {
+    if (!exists) {
+      return db.schema.createTable("centro_de_costo", (table) => {
+        // table.increments("id").primary();
+        table.integer("id");
+        table.string("nombre");
+        table.integer("estado").defaultTo(1);
+        table.timestamp("created_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
+        table.timestamp("updated_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
+        table.timestamp("deleted_at"); // Agrega deleted_at
+      });
+    }
+  });
+  db.schema.hasTable("subcategoria").then((exists) => {
+    if (!exists) {
+      return db.schema.createTable("subcategoria", (table) => {
+        // table.increments("id").primary();
+        table.integer("id");
+        table.string("nombre");
         table.integer("estado").defaultTo(1);
         table.timestamp("created_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
         table.timestamp("updated_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
@@ -229,6 +257,33 @@ function initializeDatabase() {
       });
     }
   });
+
+  db.schema.hasTable("clientes").then((exists) => {
+    if (exists) {
+      return db.schema.alterTable("clientes", (table) => {
+        table.integer("centro_costo_id");
+        table.integer("subcategoria_id");
+      });
+    }
+  });
+
+  db.schema.hasTable("ventas_encabezados").then((exists) => {
+    if (exists) {
+      return db.schema.alterTable("ventas_encabezados", (table) => {
+        table.integer("centro_costo_id");
+        table.integer("subcategoria_id");
+      });
+    }
+  });
+
+  db.schema.hasTable("pedidos_encabezados").then((exists) => {
+    if (exists) {
+      return db.schema.alterTable("pedidos_encabezados", (table) => {
+        table.integer("centro_costo_id");
+        table.integer("subcategoria_id");
+      });
+    }
+  });
 }
 
 // console.log("aahh");
@@ -298,6 +353,28 @@ function registerHandlers() {
         message: error,
         error: error.message,
       };
+    }
+  });
+
+  //Centro de COstos
+
+  ipcMain.handle("get-cost-center", async (event, args) => {
+    try {
+      return await centroDeCostoController.index(args);
+    } catch (err) {
+      console.error("Error al obtener cntro de costos:", err);
+      return [];
+    }
+  });
+
+  //Subcategorias
+
+  ipcMain.handle("get-subcategoryr", async (event, args) => {
+    try {
+      return await subcategoriaController.index(args);
+    } catch (err) {
+      console.error("Error al obtener subcategorias:", err);
+      return [];
     }
   });
 
@@ -583,7 +660,14 @@ async function fetchFilteredCloudData(element, table) {
 
 async function replicateData() {
   //Replicacion de maestros
-  let tables = ["parametros", "users", "clientes", "productos"];
+  let tables = [
+    "parametros",
+    "users",
+    "clientes",
+    "productos",
+    "subcategoria",
+    "centro_de_costo",
+  ];
 
   for (let index = 0; index < tables.length; index++) {
     let element = tables[index];
