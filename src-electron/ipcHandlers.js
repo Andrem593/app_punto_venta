@@ -151,6 +151,8 @@ function initializeDatabase() {
         table.integer("replicado").defaultTo(0);
         table.integer("id_cloud").defaultTo(null);
         table.integer("estado").defaultTo(1);
+        table.integer("centro_costo_id");
+        table.integer("subcategoria_id");
         table.timestamp("created_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
         table.timestamp("updated_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
         table.timestamp("deleted_at"); // Agrega deleted_at
@@ -204,6 +206,8 @@ function initializeDatabase() {
         table.date("fecha");
         table.integer("replicado").defaultTo(0);
         table.integer("estado").defaultTo(1);
+        table.integer("centro_costo_id");
+        table.integer("subcategoria_id");
         table.timestamp("created_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
         table.timestamp("updated_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
         table.timestamp("deleted_at"); // Agrega deleted_at
@@ -251,6 +255,12 @@ function initializeDatabase() {
         table.string("accion");
         table.integer("replicado").defaultTo(0);
         table.integer("estado").defaultTo(1);
+        table.integer("centro_costo_id");
+        table.integer("subcategoria_id");
+        table.integer("etapa_id");
+        table.string("lado");
+        table.string("pabellon");
+        table.string("cpl");
         table.timestamp("created_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
         table.timestamp("updated_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
         table.timestamp("deleted_at"); // Agrega deleted_at
@@ -258,32 +268,36 @@ function initializeDatabase() {
     }
   });
 
-  db.schema.hasTable("clientes").then((exists) => {
-    if (exists) {
-      return db.schema.alterTable("clientes", (table) => {
-        table.integer("centro_costo_id");
-        table.integer("subcategoria_id");
-      });
-    }
-  });
+  // db.schema.hasTable("clientes").then((exists) => {
+  //   if (exists) {
+  //     return db.schema.alterTable("clientes", (table) => {
+  //       table.integer("centro_costo_id");
+  //       table.integer("subcategoria_id");
+  //       table.integer("etapa_id");
+  //       table.string("lado");
+  //       table.string("pabellon");
+  //       table.string("cpl");
+  //     });
+  //   }
+  // });
 
-  db.schema.hasTable("ventas_encabezados").then((exists) => {
-    if (exists) {
-      return db.schema.alterTable("ventas_encabezados", (table) => {
-        table.integer("centro_costo_id");
-        table.integer("subcategoria_id");
-      });
-    }
-  });
+  // db.schema.hasTable("ventas_encabezados").then((exists) => {
+  //   if (exists) {
+  //     return db.schema.alterTable("ventas_encabezados", (table) => {
+  //       table.integer("centro_costo_id");
+  //       table.integer("subcategoria_id");
+  //     });
+  //   }
+  // });
 
-  db.schema.hasTable("pedidos_encabezados").then((exists) => {
-    if (exists) {
-      return db.schema.alterTable("pedidos_encabezados", (table) => {
-        table.integer("centro_costo_id");
-        table.integer("subcategoria_id");
-      });
-    }
-  });
+  // db.schema.hasTable("pedidos_encabezados").then((exists) => {
+  //   if (exists) {
+  //     return db.schema.alterTable("pedidos_encabezados", (table) => {
+  //       table.integer("centro_costo_id");
+  //       table.integer("subcategoria_id");
+  //     });
+  //   }
+  // });
 }
 
 // console.log("aahh");
@@ -369,7 +383,7 @@ function registerHandlers() {
 
   //Subcategorias
 
-  ipcMain.handle("get-subcategoryr", async (event, args) => {
+  ipcMain.handle("get-subcategory", async (event, args) => {
     try {
       return await subcategoriaController.index(args);
     } catch (err) {

@@ -925,7 +925,7 @@ export default {
       ipcRenderer
         .invoke("get-cost-center", nombres)
         .then((data) => {
-          self.clientes = data;
+          self.centro_costos = data;
         })
         .catch((error) => {
           self.triggerNegative(error);
@@ -951,6 +951,17 @@ export default {
         self.dataBaseLocalCostCenter(nombres);
       }
     },
+    dataBaseLocalSubcategory(nombres) {
+      let self = this;
+      ipcRenderer
+        .invoke("get-subcategory", nombres)
+        .then((data) => {
+          self.subcategorias = data;
+        })
+        .catch((error) => {
+          self.triggerNegative(error);
+        });
+    },
     getSubcategory(nombres = null) {
       let self = this;
       let filtro = "";
@@ -967,6 +978,8 @@ export default {
           .catch((error) => {
             self.triggerNegative(error.error);
           });
+      } else {
+        self.dataBaseLocalSubcategory(nombres);
       }
     },
     getAllProducts(value) {

@@ -11,7 +11,7 @@ class subcategoriaController {
           }
         })
         .andWhere("estado", 1)
-        .orderBy("nombres", "asc")
+        .orderBy("nombre", "asc")
         .limit(50);
       return costCenter;
     } catch (error) {
