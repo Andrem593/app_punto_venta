@@ -39,6 +39,14 @@ function initializeDatabase() {
     }
   });
 
+  db.schema.hasTable("users").then((exists) => {
+    if (exists) {
+      return db.schema.table("users", (table) => {
+        table.string("bodega").nullable(); // Agregar la columna 'deleted_at'
+      });
+    }
+  });
+
   db.schema.hasTable("parametros").then((exists) => {
     if (!exists) {
       return db.schema.createTable("parametros", (table) => {
@@ -102,6 +110,14 @@ function initializeDatabase() {
         table.timestamp("created_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
         table.timestamp("updated_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
         table.timestamp("deleted_at"); // Agrega deleted_at
+      });
+    }
+  });
+
+  db.schema.hasTable("productos").then((exists) => {
+    if (exists) {
+      return db.schema.table("productos", (table) => {
+        table.string("bodega").nullable(); // Agregar la columna 'deleted_at'
       });
     }
   });
@@ -629,6 +645,17 @@ async function fetchFilteredCloudData(element, table) {
       // .andWhere("name", "like", "%phone%") // condición like
       .limit(1); // límite de registros
 
+    let columns = await db(table).columnInfo();
+
+    let validColumns = Object.keys(columns);
+
+    let filteredData = Object.keys(element)
+      .filter((key) => validColumns.includes(key))
+      .reduce((obj, key) => {
+        obj[key] = element[key];
+        return obj;
+      }, {});
+
     if (table == "productos") {
       let porcentaje = await db("parametros")
         .where("descripcion", "porcentaje")
@@ -651,7 +678,7 @@ async function fetchFilteredCloudData(element, table) {
       // console.log(result);
       await db(table)
         .where("id", element.id) // Condición para seleccionar el registro a actualizar
-        .update({ ...element });
+        .update(filteredData);
       // .update({
       //   nombre: element.nombre, // Actualiza el campo 'name'
       //   descripcion: element.descripcion, // Actualiza el campo 'name'
@@ -661,7 +688,7 @@ async function fetchFilteredCloudData(element, table) {
       //   estado: element.estado, // Actualiza el campo 'status'
       // });
     } else {
-      await db(table).insert(element);
+      await db(table).insert(filteredData);
     }
 
     // console.log(data);
