@@ -158,6 +158,8 @@ class VentaEncabezadoController {
           estado: detail.estado,
           created_at: detail.created_at,
           updated_at: detail.updated_at,
+          centro_costo_id: detail.centro_costo_id,
+          subcategoria_id: detail.subcategoria_id,
         });
 
         insertedId = result[0]; // Asigna el ID insertado
@@ -205,7 +207,6 @@ class VentaEncabezadoController {
         },
       };
     } catch (error) {
-      console.log(error);
       await trx.rollback();
       await localDb.rollback();
       return {

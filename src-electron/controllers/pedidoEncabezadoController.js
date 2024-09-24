@@ -423,6 +423,8 @@ class PedidoEncabezadoController {
             estado: detail.estado,
             created_at: detail.created_at,
             updated_at: detail.updated_at,
+            centro_costo_id: detail.centro_costo_id,
+            subcategoria_id: detail.subcategoria_id,
           });
 
           insertedId = result[0]; // Asigna el ID insertado
@@ -466,6 +468,8 @@ class PedidoEncabezadoController {
                 saldo_actual: detail.saldo_actual,
                 fecha: detail.fecha,
                 estado: detail.estado,
+                centro_costo_id: detail.centro_costo_id,
+                subcategoria_id: detail.subcategoria_id,
               });
 
             let pedidosDetalles = await localDb("pedidos_detalles")
@@ -592,6 +596,8 @@ class PedidoEncabezadoController {
               updated_at: updatedAt,
               saldo_actual: order.saldo_actual,
               id_cloud: order.id,
+              centro_costo_id: order.centro_costo_id,
+              subcategoria_id: order.subcategoria_id,
             },
             ["id"]
           );
@@ -666,6 +672,8 @@ class PedidoEncabezadoController {
               created_at: formattedCreatedAt,
               updated_at: formattedUpdateddAt,
               saldo_actual: order.saldo_actual,
+              centro_costo_id: order.centro_costo_id,
+              subcategoria_id: order.subcategoria_id,
             });
 
           let ordersDetailsCloud = await cloudDb("pedidos_detalles").where(
