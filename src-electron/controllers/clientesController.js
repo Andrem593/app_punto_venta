@@ -4,7 +4,23 @@ class clientesController {
   async getCustomers(searchString) {
     try {
       let customers = await db("clientes")
-        .select("*")
+        .select(
+          "clientes.*",
+          "centro_de_costo.nombre as centro_costo",
+          "subcategoria.nombre as subcategoria"
+        )
+        .leftJoin(
+          "centro_de_costo",
+          "clientes.centro_costo_id",
+          "=",
+          "centro_de_costo.id"
+        )
+        .leftJoin(
+          "subcategoria",
+          "clientes.subcategoria_id",
+          "=",
+          "subcategoria.id"
+        )
         .where(function () {
           if (searchString) {
             this.where("cedula", "like", `%${searchString}%`).orWhere(
@@ -14,7 +30,7 @@ class clientesController {
             );
           }
         })
-        .andWhere("estado", 1)
+        .andWhere("clientes.estado", 1)
         .orderBy("nombres", "asc")
         .limit(50);
       return customers;

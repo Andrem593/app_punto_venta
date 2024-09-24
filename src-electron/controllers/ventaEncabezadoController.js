@@ -58,6 +58,8 @@ class VentaEncabezadoController {
           total: request.total,
           saldo_actual: request.saldo_actual,
           fecha: request.fecha,
+          centro_costo_id: request.centro_costo_id,
+          subcategoria_id: request.subcategoria_id,
         },
         ["id"]
       );
@@ -100,9 +102,13 @@ class VentaEncabezadoController {
         };
       }
       client.valor = request.saldo;
-      await trx("clientes")
-        .where("id", client.id)
-        .update({ valor: client.valor });
+      client.subcategoria_id = request.subcategoria_id;
+      client.centro_costo_id = request.centro_costo_id;
+      await trx("clientes").where("id", client.id).update({
+        valor: client.valor,
+        subcategoria_id: client.subcategoria_id,
+        centro_costo_id: client.centro_costo_id,
+      });
 
       await trx.commit();
 
@@ -152,6 +158,8 @@ class VentaEncabezadoController {
           estado: detail.estado,
           created_at: detail.created_at,
           updated_at: detail.updated_at,
+          centro_costo_id: detail.centro_costo_id,
+          subcategoria_id: detail.subcategoria_id,
         });
 
         insertedId = result[0]; // Asigna el ID insertado
@@ -179,6 +187,8 @@ class VentaEncabezadoController {
 
         await trx("clientes").where("id", detail.cliente_id).update({
           valor: detail.saldo,
+          centro_costo_id: detail.centro_costo_id,
+          subcategoria_id: detail.subcategoria_id,
         });
 
         await localDb("ventas_encabezados").where("id", detail.id).update({
@@ -197,7 +207,6 @@ class VentaEncabezadoController {
         },
       };
     } catch (error) {
-      console.log(error);
       await trx.rollback();
       await localDb.rollback();
       return {

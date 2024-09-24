@@ -26,12 +26,16 @@ class PedidoEncabezadoController {
           "od.precio",
           "od.total as total_detalle",
           "p.nombre as product_nombre",
-          "p.img as product_img"
+          "p.img as product_img",
+          "ccc.nombre as centro_costo",
+          "sub.nombre as subcategoria"
         )
         .where("pe.estado", 1)
         .andWhere("od.estado", 1)
         .andWhere("pe.replicado", 0)
         .leftJoin("users as u", "pe.user_id", "u.id")
+        .leftJoin("centro_de_costo as ccc", "pe.centro_costo_id", "ccc.id")
+        .leftJoin("subcategoria as sub", "pe.subcategoria_id", "sub.id")
         .leftJoin("clientes as c", "pe.cliente_id", "c.id")
         .leftJoin("pedidos_detalles as od", "pe.id", "od.pedido_encabezado_id")
         .leftJoin("productos as p", "od.producto_id", "p.id")
@@ -119,6 +123,8 @@ class PedidoEncabezadoController {
           total: request.total,
           saldo_actual: request.saldo_actual,
           fecha: request.fecha,
+          centro_costo_id: request.centro_costo_id,
+          subcategoria_id: request.subcategoria_id,
         },
         ["id"]
       );
@@ -196,6 +202,8 @@ class PedidoEncabezadoController {
         iva: request.iva,
         total: request.total,
         fecha: request.fecha,
+        centro_costo_id: request.centro_costo_id,
+        subcategoria_id: request.subcategoria_id,
       });
 
       await trx.commit();
@@ -415,6 +423,8 @@ class PedidoEncabezadoController {
             estado: detail.estado,
             created_at: detail.created_at,
             updated_at: detail.updated_at,
+            centro_costo_id: detail.centro_costo_id,
+            subcategoria_id: detail.subcategoria_id,
           });
 
           insertedId = result[0]; // Asigna el ID insertado
@@ -458,6 +468,8 @@ class PedidoEncabezadoController {
                 saldo_actual: detail.saldo_actual,
                 fecha: detail.fecha,
                 estado: detail.estado,
+                centro_costo_id: detail.centro_costo_id,
+                subcategoria_id: detail.subcategoria_id,
               });
 
             let pedidosDetalles = await localDb("pedidos_detalles")
@@ -584,6 +596,8 @@ class PedidoEncabezadoController {
               updated_at: updatedAt,
               saldo_actual: order.saldo_actual,
               id_cloud: order.id,
+              centro_costo_id: order.centro_costo_id,
+              subcategoria_id: order.subcategoria_id,
             },
             ["id"]
           );
@@ -658,6 +672,8 @@ class PedidoEncabezadoController {
               created_at: formattedCreatedAt,
               updated_at: formattedUpdateddAt,
               saldo_actual: order.saldo_actual,
+              centro_costo_id: order.centro_costo_id,
+              subcategoria_id: order.subcategoria_id,
             });
 
           let ordersDetailsCloud = await cloudDb("pedidos_detalles").where(

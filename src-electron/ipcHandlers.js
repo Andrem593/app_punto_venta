@@ -8,6 +8,8 @@ const pedidoEncabezadoController = require("./controllers/pedidoEncabezadoContro
 const { db, cloudDb } = require("./connections/db");
 const ventaEncabezadoController = require("./controllers/ventaEncabezadoController");
 const loginController = require("./controllers/loginController");
+const subcategoriaController = require("./controllers/subcategoriaController");
+const centroDeCostoController = require("./controllers/centroDeCostoController");
 
 // Inicializar la base de datos
 function initializeDatabase() {
@@ -33,6 +35,14 @@ function initializeDatabase() {
           .defaultTo(null)
           .collate("utf8mb4_unicode_ci"); // VARCHAR(100) NULL DEFAULT NULL
         table.timestamps(true, true); // TIMESTAMP NULL DEFAULT NULL for created_at and updated_at
+      });
+    }
+  });
+
+  db.schema.hasTable("users").then((exists) => {
+    if (exists) {
+      return db.schema.table("users", (table) => {
+        table.string("bodega").nullable(); // Agregar la columna 'deleted_at'
       });
     }
   });
@@ -103,6 +113,40 @@ function initializeDatabase() {
       });
     }
   });
+
+  db.schema.hasTable("productos").then((exists) => {
+    if (exists) {
+      return db.schema.table("productos", (table) => {
+        table.string("bodega").nullable(); // Agregar la columna 'deleted_at'
+      });
+    }
+  });
+  db.schema.hasTable("centro_de_costo").then((exists) => {
+    if (!exists) {
+      return db.schema.createTable("centro_de_costo", (table) => {
+        // table.increments("id").primary();
+        table.integer("id");
+        table.string("nombre");
+        table.integer("estado").defaultTo(1);
+        table.timestamp("created_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
+        table.timestamp("updated_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
+        table.timestamp("deleted_at"); // Agrega deleted_at
+      });
+    }
+  });
+  db.schema.hasTable("subcategoria").then((exists) => {
+    if (!exists) {
+      return db.schema.createTable("subcategoria", (table) => {
+        // table.increments("id").primary();
+        table.integer("id");
+        table.string("nombre");
+        table.integer("estado").defaultTo(1);
+        table.timestamp("created_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
+        table.timestamp("updated_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
+        table.timestamp("deleted_at"); // Agrega deleted_at
+      });
+    }
+  });
   db.schema.hasTable("pedidos_encabezados").then((exists) => {
     if (!exists) {
       return db.schema.createTable("pedidos_encabezados", (table) => {
@@ -123,6 +167,8 @@ function initializeDatabase() {
         table.integer("replicado").defaultTo(0);
         table.integer("id_cloud").defaultTo(null);
         table.integer("estado").defaultTo(1);
+        table.integer("centro_costo_id");
+        table.integer("subcategoria_id");
         table.timestamp("created_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
         table.timestamp("updated_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
         table.timestamp("deleted_at"); // Agrega deleted_at
@@ -176,6 +222,8 @@ function initializeDatabase() {
         table.date("fecha");
         table.integer("replicado").defaultTo(0);
         table.integer("estado").defaultTo(1);
+        table.integer("centro_costo_id");
+        table.integer("subcategoria_id");
         table.timestamp("created_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
         table.timestamp("updated_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
         table.timestamp("deleted_at"); // Agrega deleted_at
@@ -223,12 +271,49 @@ function initializeDatabase() {
         table.string("accion");
         table.integer("replicado").defaultTo(0);
         table.integer("estado").defaultTo(1);
+        table.integer("centro_costo_id");
+        table.integer("subcategoria_id");
+        table.integer("etapa_id");
+        table.string("lado");
+        table.string("pabellon");
+        table.string("cpl");
         table.timestamp("created_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
         table.timestamp("updated_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
         table.timestamp("deleted_at"); // Agrega deleted_at
       });
     }
   });
+
+  // db.schema.hasTable("clientes").then((exists) => {
+  //   if (exists) {
+  //     return db.schema.alterTable("clientes", (table) => {
+  //       table.integer("centro_costo_id");
+  //       table.integer("subcategoria_id");
+  //       table.integer("etapa_id");
+  //       table.string("lado");
+  //       table.string("pabellon");
+  //       table.string("cpl");
+  //     });
+  //   }
+  // });
+
+  // db.schema.hasTable("ventas_encabezados").then((exists) => {
+  //   if (exists) {
+  //     return db.schema.alterTable("ventas_encabezados", (table) => {
+  //       table.integer("centro_costo_id");
+  //       table.integer("subcategoria_id");
+  //     });
+  //   }
+  // });
+
+  // db.schema.hasTable("pedidos_encabezados").then((exists) => {
+  //   if (exists) {
+  //     return db.schema.alterTable("pedidos_encabezados", (table) => {
+  //       table.integer("centro_costo_id");
+  //       table.integer("subcategoria_id");
+  //     });
+  //   }
+  // });
 }
 
 // console.log("aahh");
@@ -298,6 +383,28 @@ function registerHandlers() {
         message: error,
         error: error.message,
       };
+    }
+  });
+
+  //Centro de COstos
+
+  ipcMain.handle("get-cost-center", async (event, args) => {
+    try {
+      return await centroDeCostoController.index(args);
+    } catch (err) {
+      console.error("Error al obtener cntro de costos:", err);
+      return [];
+    }
+  });
+
+  //Subcategorias
+
+  ipcMain.handle("get-subcategory", async (event, args) => {
+    try {
+      return await subcategoriaController.index(args);
+    } catch (err) {
+      console.error("Error al obtener subcategorias:", err);
+      return [];
     }
   });
 
@@ -538,6 +645,17 @@ async function fetchFilteredCloudData(element, table) {
       // .andWhere("name", "like", "%phone%") // condición like
       .limit(1); // límite de registros
 
+    let columns = await db(table).columnInfo();
+
+    let validColumns = Object.keys(columns);
+
+    let filteredData = Object.keys(element)
+      .filter((key) => validColumns.includes(key))
+      .reduce((obj, key) => {
+        obj[key] = element[key];
+        return obj;
+      }, {});
+
     if (table == "productos") {
       let porcentaje = await db("parametros")
         .where("descripcion", "porcentaje")
@@ -560,7 +678,7 @@ async function fetchFilteredCloudData(element, table) {
       // console.log(result);
       await db(table)
         .where("id", element.id) // Condición para seleccionar el registro a actualizar
-        .update({ ...element });
+        .update(filteredData);
       // .update({
       //   nombre: element.nombre, // Actualiza el campo 'name'
       //   descripcion: element.descripcion, // Actualiza el campo 'name'
@@ -570,7 +688,7 @@ async function fetchFilteredCloudData(element, table) {
       //   estado: element.estado, // Actualiza el campo 'status'
       // });
     } else {
-      await db(table).insert(element);
+      await db(table).insert(filteredData);
     }
 
     // console.log(data);
@@ -583,7 +701,14 @@ async function fetchFilteredCloudData(element, table) {
 
 async function replicateData() {
   //Replicacion de maestros
-  let tables = ["parametros", "users", "clientes", "productos"];
+  let tables = [
+    "parametros",
+    "users",
+    "clientes",
+    "productos",
+    "subcategoria",
+    "centro_de_costo",
+  ];
 
   for (let index = 0; index < tables.length; index++) {
     let element = tables[index];

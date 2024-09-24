@@ -97,6 +97,38 @@
                 </div>
               </q-card-section>
               <q-separator />
+
+              <q-card-section class="row items-center">
+                <div class="col">
+                  <div class="text-subtitle2">
+                    Centro de Costo: {{ form.centro_costo }}
+                  </div>
+                </div>
+
+                <div class="col-auto">
+                  <q-btn
+                    color="info"
+                    icon="search"
+                    @click="openModalCostCenter"
+                  />
+                </div>
+              </q-card-section>
+
+              <q-card-section class="row items-center">
+                <div class="col">
+                  <div class="text-subtitle2">
+                    Subcategoría: {{ form.subcategoria }}
+                  </div>
+                </div>
+
+                <div class="col-auto">
+                  <q-btn
+                    color="info"
+                    icon="search"
+                    @click="openModalSubcategory"
+                  />
+                </div>
+              </q-card-section>
               <q-card-section>
                 <div class="text-subtitle2">Saldo: ${{ form.saldo }}</div>
               </q-card-section>
@@ -356,7 +388,7 @@
         <q-card-section>
           <q-input v-model="searchClient" label="Cliente"
             ><template v-slot:prepend>
-              <q-icon name="searchss" />
+              <q-icon name="search" />
             </template>
           </q-input>
         </q-card-section>
@@ -372,6 +404,94 @@
               </q-item-section>
 
               <q-item-section side top>{{ data.correo }}</q-item-section>
+            </q-item>
+          </q-list>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="modalSearchSubcategory">
+      <q-card style="width: 600px; max-width: 80vw">
+        <q-toolbar>
+          <q-avatar>
+            <img
+              src="https://contifico.com/wp-content/uploads/2020/06/isotipo-contifico-1.png"
+            />
+          </q-avatar>
+
+          <q-toolbar-title class="text-center"
+            >Listado de Subcategorías</q-toolbar-title
+          >
+
+          <q-btn flat round dense icon="close" v-close-popup />
+        </q-toolbar>
+
+        <q-card-section>
+          <q-input
+            v-model="searchSubcategory"
+            :input-debounce="500"
+            label="Centro de Costo"
+            ><template v-slot:prepend>
+              <q-icon name="search" />
+            </template>
+          </q-input>
+        </q-card-section>
+
+        <q-card-section style="max-height: 50vh" class="scroll">
+          <q-list bordered class="rounded-borders">
+            <q-item
+              clickable
+              v-ripple
+              v-for="(data, i) in subcategorias"
+              :key="i"
+            >
+              <q-item-section @click="getSubcategoryData(data)">
+                <q-item-label lines="1">{{ data.nombre }}</q-item-label>
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="modalSearchCentroCosto">
+      <q-card style="width: 600px; max-width: 80vw">
+        <q-toolbar>
+          <q-avatar>
+            <img
+              src="https://contifico.com/wp-content/uploads/2020/06/isotipo-contifico-1.png"
+            />
+          </q-avatar>
+
+          <q-toolbar-title class="text-center"
+            >Listado de Centro de Costo</q-toolbar-title
+          >
+
+          <q-btn flat round dense icon="close" v-close-popup />
+        </q-toolbar>
+
+        <q-card-section>
+          <q-input
+            v-model="searchCentroCosto"
+            :input-debounce="500"
+            label="Centro de Costo"
+            ><template v-slot:prepend>
+              <q-icon name="search" />
+            </template>
+          </q-input>
+        </q-card-section>
+
+        <q-card-section style="max-height: 50vh" class="scroll">
+          <q-list bordered class="rounded-borders">
+            <q-item
+              clickable
+              v-ripple
+              v-for="(data, i) in centro_costos"
+              :key="i"
+            >
+              <q-item-section @click="getCostCenterData(data)">
+                <q-item-label lines="1">{{ data.nombre }}</q-item-label>
+              </q-item-section>
             </q-item>
           </q-list>
         </q-card-section>
@@ -484,6 +604,10 @@ export default {
         subtotal: 0.0,
         total: 0.0,
         iva: 0.0,
+        centro_costo_id: null,
+        centro_costo: "",
+        subcategoria_id: null,
+        subcategoria: "",
       },
       searchProduct: "",
       searchClient: "",
@@ -544,6 +668,13 @@ export default {
       block: false,
       isDisabled: false,
       online: false,
+      modalSearchCentroCosto: false,
+      searchCentroCosto: "",
+      centro_costos: [],
+      modalSearchSubcategory: false,
+      searchSubcategory: "",
+      subcategorias: [],
+
       // online: navigator.onLine,
     };
   },
@@ -556,6 +687,14 @@ export default {
       console.log(value);
       let self = this;
       self.getClients(value);
+    },
+    searchCentroCosto(value) {
+      let self = this;
+      self.getCostCenter(value);
+    },
+    searchSubcategory(value) {
+      let self = this;
+      self.getSubcategory(value);
     },
   },
   methods: {
@@ -781,6 +920,68 @@ export default {
         self.dataBaseLocalgetClients(nombres);
       }
     },
+    dataBaseLocalCostCenter(nombres) {
+      let self = this;
+      ipcRenderer
+        .invoke("get-cost-center", nombres)
+        .then((data) => {
+          self.centro_costos = data;
+        })
+        .catch((error) => {
+          self.triggerNegative(error);
+        });
+    },
+    getCostCenter(nombres = null) {
+      let self = this;
+      let filtro = "";
+      if (nombres != null && nombres.length > 2) {
+        filtro = `&nombre=${nombres}`;
+      }
+
+      if (self.online) {
+        this.$axios
+          .get(`/api/centro-costo-index?perPage=all${filtro}`)
+          .then(({ data }) => {
+            self.centro_costos = data;
+          })
+          .catch((error) => {
+            self.triggerNegative(error.error);
+          });
+      } else {
+        self.dataBaseLocalCostCenter(nombres);
+      }
+    },
+    dataBaseLocalSubcategory(nombres) {
+      let self = this;
+      ipcRenderer
+        .invoke("get-subcategory", nombres)
+        .then((data) => {
+          self.subcategorias = data;
+        })
+        .catch((error) => {
+          self.triggerNegative(error);
+        });
+    },
+    getSubcategory(nombres = null) {
+      let self = this;
+      let filtro = "";
+      if (nombres != null && nombres.length > 2) {
+        filtro = `&nombre=${nombres}`;
+      }
+
+      if (self.online) {
+        this.$axios
+          .get(`/api/subcategoria-index?perPage=all${filtro}`)
+          .then(({ data }) => {
+            self.subcategorias = data;
+          })
+          .catch((error) => {
+            self.triggerNegative(error.error);
+          });
+      } else {
+        self.dataBaseLocalSubcategory(nombres);
+      }
+    },
     getAllProducts(value) {
       let self = this;
       if (value != "") {
@@ -852,6 +1053,26 @@ export default {
           }
         });
     },
+    getCostCenterData(data) {
+      let self = this;
+      if (!self.form.cliente_id) {
+        self.triggerNegative("Es necesario que exista un cliente.");
+        return;
+      }
+      self.form.centro_costo_id = data.id;
+      self.form.centro_costo = data.nombre;
+      self.modalSearchCentroCosto = false;
+    },
+    getSubcategoryData(data) {
+      let self = this;
+      if (!self.form.cliente_id) {
+        self.triggerNegative("Es necesario que exista un cliente.");
+        return;
+      }
+      self.form.subcategoria_id = data.id;
+      self.form.subcategoria = data.nombre;
+      self.modalSearchSubcategory = false;
+    },
     getCustomerData(data) {
       let self = this;
       if (self.form.id) {
@@ -870,6 +1091,10 @@ export default {
       self.form.id = "";
       self.form.cliente_id = data.id;
       self.form.nombre_completo = data.nombres;
+      self.form.centro_costo_id = data.centro_costo_id;
+      self.form.centro_costo = data.centro_costo;
+      self.form.subcategoria_id = data.subcategoria_id;
+      self.form.subcategoria = data.subcategoria;
       self.form.cedula = data.cedula;
       self.form.saldo = data.valor;
       self.form.saldo_actual = data.valor;
@@ -1313,6 +1538,10 @@ export default {
         subtotal: 0.0,
         total: 0.0,
         iva: 0.0,
+        centro_costo_id: null,
+        centro_costo: "",
+        subcategoria_id: null,
+        subcategoria: "",
       };
     },
     databaseLocalSaveSale() {
@@ -1422,6 +1651,8 @@ export default {
         <div style="font-size:10px;">
           <h4>Recibo de Entrega</h4>
           <p>Cliente: ${data.nombre_completo}</p>
+          <p>Centro de Costo: ${data.centro_costo}</p>
+          <p>Subcategoría: ${data.subcategoria}</p>
           <p>Saldo Actual: ${data.saldo}</p>
           <p>Fecha: ${new Date().toLocaleString()}</p>
           <table style="font-size:10px">
@@ -1633,6 +1864,16 @@ export default {
       let self = this;
       self.getClients();
       self.modalSearchClient = true;
+    },
+    openModalCostCenter() {
+      let self = this;
+      self.getCostCenter();
+      self.modalSearchCentroCosto = true;
+    },
+    openModalSubcategory() {
+      let self = this;
+      self.getSubcategory();
+      self.modalSearchSubcategory = true;
     },
   },
   created() {
