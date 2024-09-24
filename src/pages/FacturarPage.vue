@@ -10,58 +10,27 @@
           </template>
         </q-input>
         <q-separator spaced />
-        <q-btn-toggle
-          v-model="secondModel"
-          spread
-          class="my-custom-toggle"
-          no-caps
-          unelevated
-          toggle-color="primary"
-          color="white"
-          size="15px"
-          text-color="primary"
-          :options="[
+        <q-btn-toggle v-model="secondModel" spread class="my-custom-toggle" no-caps unelevated toggle-color="primary"
+          color="white" size="15px" text-color="primary" :options="[
             { label: 'CATEGORIAS', value: 'one' },
             { label: 'PRODUCTOS', value: 'two' },
-          ]"
-        />
+          ]" />
         <q-separator spaced />
 
         <div style="max-height: 60vh" class="scroll">
           <div class="q-pa-md row justify-center q-gutter-md">
-            <q-card
-              style="width: 100px"
-              class="my-card"
-              flat
-              bordered
-              v-for="(data, index) in products"
-              :key="index"
-            >
-              <q-img
-                v-if="data.img && data.img != ''"
-                :src="data.img"
-                class="my-img"
-                style="width: 100px; height: 100px"
-              />
-              <q-img
-                v-else
-                src="src/assets/images/no-image.png"
-                class="my-img"
-                style="width: 100px; height: 100px"
-              />
+            <q-card style="width: 100px" class="my-card" flat bordered v-for="(data, index) in products" :key="index">
+              <q-img v-if="data.img && data.img != ''" :src="data.img" class="my-img"
+                style="width: 100px; height: 100px" />
+              <q-img v-else src="src/assets/images/no-image.png" class="my-img" style="width: 100px; height: 100px" />
 
               <q-card-section>
                 <div class="row no-wrap items-center">
                   <div class="col">{{ data.nombre }}</div>
                 </div>
                 <div class="row justify-center">
-                  <q-btn
-                    :disable="form.cliente_id == ''"
-                    flat
-                    style="font-size: 10px"
-                    color="primary"
-                    @click="getProductInformation(data)"
-                  >
+                  <q-btn :disable="form.cliente_id == ''" flat style="font-size: 10px" color="primary"
+                    @click="getProductInformation(data)">
                     Agregar
                   </q-btn>
                 </div>
@@ -82,12 +51,7 @@
                   <div class="text-subtitle2">{{ form.cedula }}</div>
                 </div>
                 <div class="col-auto">
-                  <q-btn
-                    @click="openModalClients"
-                    color="secondary"
-                    icon="search"
-                    icon-right="person"
-                  />
+                  <q-btn @click="openModalClients" color="secondary" icon="search" icon-right="person" />
                 </div>
               </q-card-section>
               <q-separator />
@@ -134,27 +98,17 @@
 
               <q-card-section class="q-pa-sm">
                 <div style="width: 100%; height: 300px; overflow: auto">
-                  <q-table
-                    flat
-                    bordered
-                    :rows="form.productos"
-                    :columns="columns1"
-                    row-key="id"
-                    virtual-scroll
-                    v-model:pagination="pagination"
-                    :rows-per-page-options="[]"
-                    hide-bottom
-                    class="custom-table"
-                  >
+                  <q-table flat bordered :rows="form.productos" :columns="columns1" row-key="id" virtual-scroll
+                    v-model:pagination="pagination" :rows-per-page-options="[]" hide-bottom class="custom-table">
                     <template v-slot:body-cell-precio="props">
                       <q-td :props="props">
-                        ${{ props.row.precio.toFixed(2) }}
+                        ${{ props.row.precio }}
                         <!-- <q-input v-model="props.row.nombre" dense /> -->
                       </q-td>
                     </template>
                     <template v-slot:body-cell-total="props">
                       <q-td :props="props">
-                        ${{ props.row.total.toFixed(2) }}
+                        ${{ props.row.total }}
                         <!-- <q-input v-model="props.row.nombre" dense /> -->
                       </q-td>
                     </template>
@@ -177,13 +131,8 @@
 
                     <template v-slot:body-cell-acciones="props">
                       <q-td :props="props">
-                        <q-btn
-                          color="negative"
-                          icon="delete"
-                          :disable="isDisabled"
-                          @click="deleteProduct(props.row, props.rowIndex)"
-                          dense
-                        />
+                        <q-btn color="negative" icon="delete" :disable="isDisabled"
+                          @click="deleteProduct(props.row, props.rowIndex)" dense />
                       </q-td>
                     </template>
                   </q-table>
@@ -218,9 +167,7 @@
                 <div class="row items-center" style="width: 100%">
                   <q-item-label class="col text-start">Subtotal:</q-item-label>
                   <div class="col-auto row justify-end">
-                    <q-item-label class="col text-start"
-                      >${{ form.subtotal }}</q-item-label
-                    >
+                    <q-item-label class="col text-start">${{ form.subtotal }}</q-item-label>
                   </div>
                 </div>
               </q-card-actions>
@@ -228,9 +175,7 @@
                 <div class="row items-center" style="width: 100%">
                   <q-item-label class="col text-start">IVA:</q-item-label>
                   <div class="col-auto row justify-end">
-                    <q-item-label class="col text-start"
-                      >${{ form.iva }}</q-item-label
-                    >
+                    <q-item-label class="col text-start">${{ form.iva }}</q-item-label>
                   </div>
                 </div>
               </q-card-actions>
@@ -240,13 +185,10 @@
 
         <div class="q-mt-md q-mx-md q-pa-md" style="background: #1976d2">
           <div class="row items-center" style="width: 100%">
-            <q-item-label class="col text-start" style="color: white"
-              ><strong>TOTAL</strong></q-item-label
-            >
+            <q-item-label class="col text-start" style="color: white"><strong>TOTAL</strong></q-item-label>
             <div class="col-auto row justify-end">
-              <q-item-label class="col text-start" style="color: white"
-                ><strong>${{ form.total.toFixed(2) }}</strong></q-item-label
-              >
+              <q-item-label class="col text-start" style="color: white"><strong>${{ form.total.toFixed(2)
+                  }}</strong></q-item-label>
             </div>
           </div>
         </div>
@@ -254,21 +196,9 @@
 
       <div class="col-md-12">
         <q-btn-group spread>
-          <q-btn
-            style="background-color: #00cfff; color: white; font-size: 20px"
-            label="GUARDAR"
-            @click="save"
-            :disable="isDisabled"
-            icon="save"
-          />
-          <q-btn
-            @click="saveSale"
-            :disable="block"
-            color="green"
-            label="PAGAR"
-            style="font-size: 20px"
-            icon="money"
-          />
+          <q-btn style="background-color: #00cfff; color: white; font-size: 20px" label="GUARDAR" @click="save"
+            :disable="isDisabled" icon="save" />
+          <q-btn @click="saveSale" :disable="block" color="green" label="PAGAR" style="font-size: 20px" icon="money" />
         </q-btn-group>
       </div>
     </div>
@@ -277,31 +207,18 @@
       <q-card style="width: 700px; max-width: 80vw">
         <q-toolbar>
           <q-avatar>
-            <img
-              src="https://contifico.com/wp-content/uploads/2020/06/isotipo-contifico-1.png"
-            />
+            <img src="https://contifico.com/wp-content/uploads/2020/06/isotipo-contifico-1.png" />
           </q-avatar>
 
-          <q-toolbar-title class="text-center"
-            >Listado de Pedidos Guardados</q-toolbar-title
-          >
+          <q-toolbar-title class="text-center">Listado de Pedidos Guardados</q-toolbar-title>
 
           <q-btn flat round dense icon="close" v-close-popup />
         </q-toolbar>
         <q-card-section class="q-pa-sm">
           <div style="width: 100%; height: 300px; overflow: auto">
-            <q-table
-              flat
-              bordered
-              :rows="pedidos_guardados"
-              :columns="pedidos_guardados_cabecera"
-              row-key="id"
-              virtual-scroll
-              v-model:pagination="pagination"
-              :rows-per-page-options="[]"
-              hide-bottom
-              class="custom-table"
-            >
+            <q-table flat bordered :rows="pedidos_guardados" :columns="pedidos_guardados_cabecera" row-key="id"
+              virtual-scroll v-model:pagination="pagination" :rows-per-page-options="[]" hide-bottom
+              class="custom-table">
               <template v-slot:body-cell-precio="props">
                 <q-td :props="props"> ${{ props.row.precio.toFixed(2) }} </q-td>
               </template>
@@ -310,19 +227,9 @@
               </template>
               <template v-slot:body-cell-acciones="props">
                 <q-td :props="props">
-                  <q-btn
-                    color="primary"
-                    icon="restore"
-                    @click="recoverOrder(props.row, props.rowIndex)"
-                    dense
-                  />
-                  <q-btn
-                    color="negative"
-                    icon="delete"
-                    :disable="isDisabled"
-                    @click="deleteOrder(props.row, props.rowIndex)"
-                    dense
-                  />
+                  <q-btn color="primary" icon="restore" @click="recoverOrder(props.row, props.rowIndex)" dense />
+                  <q-btn color="negative" icon="delete" :disable="isDisabled"
+                    @click="deleteOrder(props.row, props.rowIndex)" dense />
                 </q-td>
               </template>
             </q-table>
@@ -335,21 +242,16 @@
       <q-card style="width: 700px; max-width: 80vw">
         <q-toolbar>
           <q-avatar>
-            <img
-              src="https://contifico.com/wp-content/uploads/2020/06/isotipo-contifico-1.png"
-            />
+            <img src="https://contifico.com/wp-content/uploads/2020/06/isotipo-contifico-1.png" />
           </q-avatar>
 
-          <q-toolbar-title class="text-center"
-            >Listado de Personas</q-toolbar-title
-          >
+          <q-toolbar-title class="text-center">Listado de Personas</q-toolbar-title>
 
           <q-btn flat round dense icon="close" v-close-popup />
         </q-toolbar>
 
         <q-card-section>
-          <q-input v-model="searchClient" label="Cliente"
-            ><template v-slot:prepend>
+          <q-input v-model="searchClient" label="Cliente"><template v-slot:prepend>
               <q-icon name="searchss" />
             </template>
           </q-input>
@@ -388,33 +290,18 @@
               Stock: {{ product.stock }}
             </div>
           </div>
-          <q-input
-            type="number"
-            v-model="product.cantidad"
-            :max="product.stock"
-            :min="1"
-            label="Cantidad"
-            outlined
-            class="q-mt-sm"
-            lazy-rules
-            :rules="[
+          <q-input type="number" v-model="product.cantidad" :max="product.stock" :min="1" label="Cantidad" outlined
+            class="q-mt-sm" lazy-rules :rules="[
               (val) =>
                 (val > 0 && val <= product.stock) ||
                 'La cantidad debe estar dentro del rango',
-            ]"
-          />
+            ]" />
         </q-card-section>
 
         <q-separator />
 
         <q-card-actions align="right">
-          <q-btn
-            flat
-            color="primary"
-            :disable="isDisabled"
-            @click="addProducts(product)"
-            label="Añadir"
-          />
+          <q-btn flat color="primary" :disable="isDisabled" @click="addProducts(product)" label="Añadir" />
           <q-btn v-close-popup flat color="primary" label="Cancelar" />
         </q-card-actions>
       </q-card>
@@ -470,6 +357,8 @@ export default {
         cliente_id: "",
         nombre_completo: "",
         cedula: "",
+        cpl: "",
+        pabellon: "",
         saldo: 0.0,
         saldo_actual: 0.0,
         productos: [],
@@ -670,6 +559,8 @@ export default {
       self.form.cliente_id = data.id;
       self.form.nombre_completo = data.nombres;
       self.form.cedula = data.cedula;
+      self.form.cpl = data.cpl;
+      self.form.pabellon = data.pabellon;
       self.form.saldo = data.valor;
       self.form.saldo_actual = data.valor;
 
@@ -919,6 +810,8 @@ export default {
       self.form = {
         cliente_id: "",
         nombre_completo: "",
+        cpl: "",
+        pabellon: "",
         cedula: "",
         saldo: 0.0,
         saldo_actual: 0.0,
@@ -971,6 +864,7 @@ export default {
       }
     },
     generateReceipt(data) {
+      console.log(data);
       var detalle = data.productos.map((producto) => {
         return `<tr><td>${producto.nombre}</td>
               <td>${producto.cantidad}</td>
@@ -983,6 +877,9 @@ export default {
         <div style="font-size:10px;">
           <h4>Recibo de Entrega</h4>
           <p>Cliente: ${data.nombre_completo}</p>
+          <p>Cédula: ${data.cedula}</p>
+          <p>Cpl: ${data.cpl}</p>
+          <p>Pabellon: ${data.pabellon}</p>
           <p>Saldo Actual: ${data.saldo}</p>
           <p>Fecha: ${new Date().toLocaleString()}</p>
           <table style="font-size:10px">
@@ -1095,7 +992,7 @@ export default {
     this.getProducts();
     this.getSavedOrders();
   },
-  mounted() {},
+  mounted() { },
 };
 </script>
 
