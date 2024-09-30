@@ -82,6 +82,12 @@ function initializeDatabase() {
         table.timestamp("created_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
         table.timestamp("updated_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
         table.timestamp("deleted_at").nullable(); // Agrega deleted_at
+        table.integer("centro_costo_id");
+        table.integer("subcategoria_id");
+        table.integer("etapa_id");
+        table.string("lado");
+        table.string("pabellon");
+        table.string("cpl");
       });
     }
   });

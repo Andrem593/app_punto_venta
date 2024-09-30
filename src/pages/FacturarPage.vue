@@ -71,24 +71,6 @@
 
                 <div class="col-auto">
                   <q-btn
-                    @click="openModalClients"
-                    color="secondary"
-                    icon="search"
-                    icon-right="person"
-                  />
-                </div>
-              </q-card-section>
-              <q-separator />
-
-              <q-card-section class="row items-center">
-                <div class="col">
-                  <div class="text-subtitle2">
-                    Centro de Costo: {{ form.centro_costo }}
-                  </div>
-                </div>
-
-                <div class="col-auto">
-                  <q-btn
                     color="info"
                     icon="search"
                     @click="openModalCostCenter"
