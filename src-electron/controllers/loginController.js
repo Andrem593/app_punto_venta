@@ -46,8 +46,10 @@ class LoginController {
 
       // Generar un token de autenticación
       const token = jwt.sign({ id: user.id }, "your-secret-key", {
-        expiresIn: "1h",
+        expiresIn: "24h",
       });
+
+      global.userId = user.id;
 
       return {
         data: {

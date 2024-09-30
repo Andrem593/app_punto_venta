@@ -144,6 +144,7 @@ export default {
             password: self.form.password,
           });
           console.log(response);
+          ipcRenderer.send("authenticate-user", response.data.user_id);
           const token = response.data.access_token;
           localStorage.setItem("token", token);
           self.triggerPositive("Correo Y password correctos");

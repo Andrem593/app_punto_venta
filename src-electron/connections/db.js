@@ -2,7 +2,7 @@ let path = require("path");
 let { ipcMain, app, BrowserWindow } = require("electron");
 let knex = require("knex");
 
-let dbPath = path.join(app.getPath("userData"), "database.sqlite");
+let dbPath = path.join(app.getPath("userData"), "database3.sqlite");
 
 let cloudDb = knex({
   client: "mysql", // o el cliente que estés usando

@@ -19,9 +19,15 @@ let mainWindow;
 let db;
 let online = true;
 
+global.userId = null;  // Variable global
+
 ipcMain.handle("getGlobalVariable", async (event, args) => {
   console.log("Variable Global: ", online);
   return online;
+});
+
+ipcMain.on("authenticate-user", (event, userId) => {
+  global.userId = userId;
 });
 
 ipcMain.on("print-receipt", (event, receiptContent) => {

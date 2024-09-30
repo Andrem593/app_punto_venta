@@ -28,7 +28,9 @@ class PedidoEncabezadoController {
           "p.nombre as product_nombre",
           "p.img as product_img",
           "ccc.nombre as centro_costo",
-          "sub.nombre as subcategoria"
+          "sub.nombre as subcategoria",
+          "pe.centro_costo_id",
+          "pe.subcategoria_id"
         )
         .where("pe.estado", 1)
         .andWhere("od.estado", 1)
@@ -40,8 +42,6 @@ class PedidoEncabezadoController {
         .leftJoin("pedidos_detalles as od", "pe.id", "od.pedido_encabezado_id")
         .leftJoin("productos as p", "od.producto_id", "p.id")
         .orderBy("pe.created_at", "desc")
-        .limit(20);
-
       let transformedOrders = orderHeaders.reduce((acc, order) => {
         let existingOrder = acc.find((o) => o.id === order.id);
         if (!existingOrder) {
@@ -537,6 +537,10 @@ class PedidoEncabezadoController {
   }
 
   async getCloudOrders() {
+    let globalId = global.userId ;
+    if(globalId === null){
+      return ;
+    }
     let trx = await db.transaction();
     try {
       let fecha = new Date();
@@ -553,7 +557,7 @@ class PedidoEncabezadoController {
         "fecha",
         ">=",
         fechaFormateada
-      );
+      ).andWhere('user_id', globalId);
       for (let order of orderHeaderCloud) {
         let createdAt = new Date(order.created_at);
         // Formatear al formato "YYYY-MM-DD HH:MM:SS"
@@ -579,6 +583,7 @@ class PedidoEncabezadoController {
         let orderHeaderLocal = await trx("pedidos_encabezados")
           .where("id_cloud", order.id)
           .andWhere("replicado", 0)
+          .andWhere('user_id', globalId)
           .first();
 
         if (!orderHeaderLocal) {
@@ -660,6 +665,7 @@ class PedidoEncabezadoController {
           await trx("pedidos_encabezados")
             .where("id_cloud", order.id)
             .andWhere("replicado", 0)
+            .andWhere('user_id', globalId)
             .update({
               user_id: order.user_id,
               cliente_id: order.cliente_id,

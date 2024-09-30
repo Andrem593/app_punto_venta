@@ -35,17 +35,11 @@ function initializeDatabase() {
           .defaultTo(null)
           .collate("utf8mb4_unicode_ci"); // VARCHAR(100) NULL DEFAULT NULL
         table.timestamps(true, true); // TIMESTAMP NULL DEFAULT NULL for created_at and updated_at
+        table.string("bodega").nullable(); 
       });
     }
   });
 
-  db.schema.hasTable("users").then((exists) => {
-    if (exists) {
-      return db.schema.table("users", (table) => {
-        table.string("bodega").nullable(); // Agregar la columna 'deleted_at'
-      });
-    }
-  });
 
   db.schema.hasTable("parametros").then((exists) => {
     if (!exists) {
@@ -116,17 +110,12 @@ function initializeDatabase() {
         table.timestamp("created_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
         table.timestamp("updated_at").defaultTo(db.raw("CURRENT_TIMESTAMP"));
         table.timestamp("deleted_at"); // Agrega deleted_at
+        table.string("bodega").nullable();
       });
     }
   });
 
-  db.schema.hasTable("productos").then((exists) => {
-    if (exists) {
-      return db.schema.table("productos", (table) => {
-        table.string("bodega").nullable(); // Agregar la columna 'deleted_at'
-      });
-    }
-  });
+ 
   db.schema.hasTable("centro_de_costo").then((exists) => {
     if (!exists) {
       return db.schema.createTable("centro_de_costo", (table) => {
@@ -676,12 +665,12 @@ async function fetchFilteredCloudData(element, table) {
 
       porc = porc / 100;
 
-      element.stock = Math.floor(element.stock * porc);
+      
+      filteredData.stock = Math.floor(filteredData.stock * porc);
     }
 
     if (data.length > 0) {
-      let result = data[0];
-      // console.log(result);
+ 
       await db(table)
         .where("id", element.id) // Condición para seleccionar el registro a actualizar
         .update(filteredData);
